@@ -1,0 +1,25 @@
+# Secrets and keys
+serviceAccountKey.json
+google-services.json
+GoogleService-Info.plist
+.env
+*.env
+.env.*
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# macOS
+.DS_Store
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build outputs
+build/
+dist/

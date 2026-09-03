@@ -1,0 +1,44 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "busspass-58583",
+          "appId": "1:553429085126:android:9f12915d920c4923d6a0c7",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "busspass-58583",
+          "appId": "1:553429085126:ios:5f54e6987a9fb852d6a0c7",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "macos": {
+        "default": {
+          "projectId": "busspass-58583",
+          "appId": "1:553429085126:ios:5f54e6987a9fb852d6a0c7",
+          "uploadDebugSymbols": false,
+          "fileOutput": "macos/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "busspass-58583",
+          "configurations": {
+            "android": "1:553429085126:android:9f12915d920c4923d6a0c7",
+            "ios": "1:553429085126:ios:5f54e6987a9fb852d6a0c7",
+            "macos": "1:553429085126:ios:5f54e6987a9fb852d6a0c7",
+            "web": "1:553429085126:web:8cccc85b729c2bf1d6a0c7",
+            "windows": "1:553429085126:web:6f439d1b4d0ea576d6a0c7"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}
