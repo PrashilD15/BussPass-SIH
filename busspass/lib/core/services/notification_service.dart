@@ -19,6 +19,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -107,9 +108,38 @@ class NotificationService {
 
       await _createChannels();
       _initialised = true;
+
+      // Reflect the OS's current permission state so the UI does not badger a
+      // rider who already granted access on a previous session.
+      await _refreshPermissionState();
     } catch (error) {
       debugPrint('NotificationService: initialise failed — $error');
       _initialised = false;
+    }
+  }
+
+  /// Read the current permission state without prompting.
+  Future<void> _refreshPermissionState() async {
+    try {
+      final android = _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      if (android != null) {
+        _permitted =
+            await android.areNotificationsEnabled() ?? false;
+        return;
+      }
+
+      final darwin = _plugin.resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>();
+      if (darwin != null) {
+        final state = await darwin.checkPermissions();
+        _permitted = state?.isEnabled ?? false;
+        return;
+      }
+
+      _permitted = true;
+    } catch (error) {
+      debugPrint('NotificationService: permission probe failed — $error');
     }
   }
 
@@ -135,6 +165,9 @@ class NotificationService {
     }
   }
 
+  /// Whether the device can schedule exact alarms (Android 12+ gating).
+  bool _canExact = false;
+
   /// Request permission. Returns whether it was granted.
   Future<bool> requestPermission() async {
     if (!_initialised) await initialise();
@@ -144,10 +177,32 @@ class NotificationService {
       final android = _plugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
       if (android != null) {
+        // Step 1: request POST_NOTIFICATIONS (Android 13+)
         _permitted = await android.requestNotificationsPermission() ?? false;
-        // Exact alarms are needed for a to-the-minute arrival alert. Denial is
-        // fine — the alert still fires, just with OS-decided slack.
-        await android.requestExactAlarmsPermission();
+
+        // Step 2: check whether SCHEDULE_EXACT_ALARM / USE_EXACT_ALARM is granted.
+        // On Android 12 (API 31-32) the user must enable "Alarms & Reminders"
+        // in Settings manually. On Android 13+ USE_EXACT_ALARM is auto-granted
+        // when declared in the manifest — canScheduleExactAlarms returns true.
+        final canExact = await android.canScheduleExactAlarms() ?? false;
+        _canExact = canExact;
+
+        if (!canExact) {
+          // Deep-link the user directly to the Alarms & Reminders settings page.
+          // This is the only way to enable exact alarms on Android 12.
+          try {
+            await const MethodChannel('android_intent')
+                .invokeMethod<void>('launch', {
+              'action': 'android.settings.REQUEST_SCHEDULE_EXACT_ALARM',
+            });
+          } catch (_) {
+            // Fallback: try the flutter_local_notifications built-in route.
+            await android.requestExactAlarmsPermission();
+          }
+          // Re-check after the user returns from Settings.
+          _canExact = await android.canScheduleExactAlarms() ?? false;
+        }
+
         return _permitted;
       }
 
@@ -165,6 +220,7 @@ class NotificationService {
 
       // Desktop and web: treat as permitted so nothing is gated.
       _permitted = true;
+      _canExact = true;
       return true;
     } catch (error) {
       debugPrint('NotificationService: permission request failed — $error');
@@ -246,19 +302,39 @@ class NotificationService {
     }
 
     try {
+      // Use exact scheduling when the permission is granted so the arrival
+      // alert fires to the minute. Fall back to inexact if not available —
+      // the notification still fires, just with a few minutes of OS slack.
+      final scheduleMode = _canExact
+          ? AndroidScheduleMode.exactAllowWhileIdle
+          : AndroidScheduleMode.inexactAllowWhileIdle;
+
       await _plugin.zonedSchedule(
         id: id,
         title: title,
         body: body,
         scheduledDate: tz.TZDateTime.from(when, tz.local),
         notificationDetails: _detailsFor(channel),
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        androidScheduleMode: scheduleMode,
         payload: payload,
       );
     } catch (error) {
       // Exact-alarm permission is frequently unavailable; retry inexactly rather
       // than losing the alert entirely.
-      debugPrint('NotificationService: schedule failed — $error');
+      debugPrint('NotificationService: exact schedule failed, retrying inexact — $error');
+      try {
+        await _plugin.zonedSchedule(
+          id: id,
+          title: title,
+          body: body,
+          scheduledDate: tz.TZDateTime.from(when, tz.local),
+          notificationDetails: _detailsFor(channel),
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          payload: payload,
+        );
+      } catch (e2) {
+        debugPrint('NotificationService: inexact fallback also failed — $e2');
+      }
     }
   }
 
@@ -394,5 +470,42 @@ class NotificationService {
     }
     // Leave room for the `+1` offsets used above.
     return hash & 0x7FFFFFF0;
+  }
+
+  // ── Travel-pattern alert ids ────────────────────────────────────────────
+  //
+  // Unlike journey/arrival/halt/delay alerts (hashed from a single key), pattern
+  // alerts live in a reserved, contiguous id range so that "cancel every
+  // pattern" can iterate the range without knowing the keys, and so they can
+  // never collide with a hashed id.
+
+  /// First id in the reserved travel-pattern range.
+  static const int patternAlertBaseId = 0x7F000000;
+
+  /// How many pattern slots to reserve. Bounded by the recent-search cap (12).
+  static const int patternAlertSlots = 16;
+
+  /// Deterministic slot in the pattern range for a pair key.
+  static int idForPattern(String key) {
+    var hash = 0x811c9dc5;
+    for (final unit in key.codeUnits) {
+      hash ^= unit;
+      hash = (hash * 0x01000193) & 0x7FFFFFFF;
+    }
+    return patternAlertBaseId + (hash % patternAlertSlots);
+  }
+
+  /// Cancel the alert scheduled for a travel pattern.
+  Future<void> cancelPatternAlert(String key) =>
+      cancelId(idForPattern(key));
+
+  /// Cancel a single notification by id.
+  Future<void> cancelId(int id) async {
+    if (!_initialised) return;
+    try {
+      await _plugin.cancel(id: id);
+    } catch (_) {
+      // Cancelling an alert that was never scheduled is not an error.
+    }
   }
 }

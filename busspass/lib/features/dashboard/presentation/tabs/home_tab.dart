@@ -20,7 +20,7 @@ class HomeTab extends ConsumerWidget {
     final greeting = _greeting();
 
     return Scaffold(
-      backgroundColor: AppColors.canvas,
+      backgroundColor: context.palette.canvas,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
@@ -59,17 +59,17 @@ class HomeTab extends ConsumerWidget {
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
+                            color: context.palette.surface,
                             shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.hairline),
+                            border: Border.all(color: context.palette.hairline),
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Text(
                               'A/अ',
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.inkSoft,
+                                color: context.palette.inkSoft,
                               ),
                             ),
                           ),
@@ -80,13 +80,13 @@ class HomeTab extends ConsumerWidget {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: context.palette.surface,
                           shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.hairline),
+                          border: Border.all(color: context.palette.hairline),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.notifications_outlined,
-                          color: AppColors.inkSoft,
+                          color: context.palette.inkSoft,
                           size: 22,
                         ),
                       ),
@@ -152,13 +152,13 @@ class HomeTab extends ConsumerWidget {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: AppColors.brandLight,
+                        color: context.palette.brandLight,
                         borderRadius:
                             BorderRadius.circular(AppSpacing.radiusSm),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.directions_bus_rounded,
-                        color: AppColors.brand,
+                        color: context.palette.brand,
                         size: 22,
                       ),
                     ),
@@ -186,7 +186,7 @@ class HomeTab extends ConsumerWidget {
                     ),
                     Icon(
                       Icons.chevron_right_rounded,
-                      color: AppColors.inkMuted.withValues(alpha: 0.5),
+                      color: context.palette.inkMuted.withValues(alpha: 0.5),
                       size: 20,
                     ),
                   ],
@@ -247,7 +247,7 @@ class HomeTab extends ConsumerWidget {
   void _showLanguagePicker(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.canvas,
+      backgroundColor: context.palette.canvas,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.radiusLg)),
       ),
@@ -265,7 +265,7 @@ class HomeTab extends ConsumerWidget {
               const SizedBox(height: AppSpacing.md),
               ListTile(
                 title: const Text('English'),
-                trailing: currentLocale == 'en' ? const Icon(Icons.check, color: AppColors.brand) : null,
+                trailing: currentLocale == 'en' ? Icon(Icons.check, color: context.palette.brand) : null,
                 onTap: () {
                   context.setLocale(const Locale('en'));
                   Navigator.pop(context);
@@ -273,7 +273,7 @@ class HomeTab extends ConsumerWidget {
               ),
               ListTile(
                 title: const Text('मराठी (Marathi)'),
-                trailing: currentLocale == 'mr' ? const Icon(Icons.check, color: AppColors.brand) : null,
+                trailing: currentLocale == 'mr' ? Icon(Icons.check, color: context.palette.brand) : null,
                 onTap: () {
                   context.setLocale(const Locale('mr'));
                   Navigator.pop(context);
@@ -281,7 +281,7 @@ class HomeTab extends ConsumerWidget {
               ),
               ListTile(
                 title: const Text('हिंदी (Hindi)'),
-                trailing: currentLocale == 'hi' ? const Icon(Icons.check, color: AppColors.brand) : null,
+                trailing: currentLocale == 'hi' ? Icon(Icons.check, color: context.palette.brand) : null,
                 onTap: () {
                   context.setLocale(const Locale('hi'));
                   Navigator.pop(context);
@@ -289,7 +289,7 @@ class HomeTab extends ConsumerWidget {
               ),
               ListTile(
                 title: const Text('ಕನ್ನಡ (Kannada)'),
-                trailing: currentLocale == 'kn' ? const Icon(Icons.check, color: AppColors.brand) : null,
+                trailing: currentLocale == 'kn' ? Icon(Icons.check, color: context.palette.brand) : null,
                 onTap: () {
                   context.setLocale(const Locale('kn'));
                   Navigator.pop(context);
@@ -311,18 +311,30 @@ class _SearchBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding:
             const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: 18),
         decoration: BoxDecoration(
-          color: AppColors.ink,
+          gradient: LinearGradient(
+            colors: [palette.brand, palette.brandDeep],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+          boxShadow: [
+            BoxShadow(
+              color: palette.brand.withValues(alpha: 0.28),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
         child: Row(
           children: [
-            const Icon(Icons.search_rounded, color: Colors.white, size: 26),
+            Icon(Icons.search_rounded, color: palette.onBrand, size: 26),
             const SizedBox(width: AppSpacing.lg),
             Expanded(
               child: Column(
@@ -330,10 +342,10 @@ class _SearchBanner extends StatelessWidget {
                 children: [
                   Text(
                     'home.search_title'.tr(),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: palette.onBrand,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -341,7 +353,7 @@ class _SearchBanner extends StatelessWidget {
                     'home.search_subtitle'.tr(),
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: palette.onBrand.withValues(alpha: 0.7),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -351,11 +363,10 @@ class _SearchBanner extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
+                color: palette.onBrand.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
               ),
-              child: const Icon(Icons.tune_rounded,
-                  color: Colors.white, size: 18),
+              child: Icon(Icons.tune_rounded, color: palette.onBrand, size: 18),
             ),
           ],
         ),
@@ -384,11 +395,11 @@ class _QuickAction extends StatelessWidget {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.palette.surface,
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                border: Border.all(color: AppColors.hairline),
+                border: Border.all(color: context.palette.hairline),
               ),
-              child: Icon(icon, color: AppColors.inkSoft, size: 24),
+              child: Icon(icon, color: context.palette.inkSoft, size: 24),
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
@@ -396,7 +407,7 @@ class _QuickAction extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.inkSoft,
+                    color: context.palette.inkSoft,
                   ),
             ),
           ],

@@ -1,8 +1,28 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Location permissions required for Google Maps and Geolocator -->
+    <!-- Network -->
     <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- Location — Google Maps and Geolocator -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+
+    <!-- Notifications — Android 13+ requires explicit runtime grant -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+    <!-- Exact alarms — required for precise arrival/halt alerts on Android 12+.
+         SCHEDULE_EXACT_ALARM requires the user to grant "Alarms & Reminders"
+         in Settings. USE_EXACT_ALARM (Android 13+) is self-granting for apps
+         whose core purpose is time-sensitive alerts. We declare both so the
+         system picks the right one per API level.  -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"
+        android:maxSdkVersion="32"/>
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
+
+    <!-- Keep scheduled alarms alive after the device reboots -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
+    <!-- Vibration for arrival and halt alerts -->
+    <uses-permission android:name="android.permission.VIBRATE"/>
 
     <application
         android:label="BussPass"
