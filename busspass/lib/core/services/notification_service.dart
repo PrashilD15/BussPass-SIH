@@ -184,7 +184,7 @@ class NotificationService {
         // On Android 12 (API 31-32) the user must enable "Alarms & Reminders"
         // in Settings manually. On Android 13+ USE_EXACT_ALARM is auto-granted
         // when declared in the manifest — canScheduleExactAlarms returns true.
-        final canExact = await android.canScheduleExactAlarms() ?? false;
+        final canExact = await android.canScheduleExactNotifications() ?? false;
         _canExact = canExact;
 
         if (!canExact) {
@@ -200,7 +200,7 @@ class NotificationService {
             await android.requestExactAlarmsPermission();
           }
           // Re-check after the user returns from Settings.
-          _canExact = await android.canScheduleExactAlarms() ?? false;
+          _canExact = await android.canScheduleExactNotifications() ?? false;
         }
 
         return _permitted;
