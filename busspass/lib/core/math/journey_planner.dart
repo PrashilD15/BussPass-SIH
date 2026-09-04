@@ -564,7 +564,10 @@ class JourneyPlanner {
       final label = queue.removeFirst();
       expansions++;
 
-      final key = '${label.stopId}|${label.transfers}';
+      // Include the service tier so a slower but cheaper class (e.g. Ordinary)
+      // is not discarded merely because a faster, costlier bus arrived first.
+      final tier = label.viaLeg?.serviceClass.tier ?? 0;
+      final key = '${label.stopId}|${label.transfers}|$tier';
       final known = best[key];
       if (known != null && known <= label.cost) continue;
       best[key] = label.cost;
@@ -626,7 +629,8 @@ class JourneyPlanner {
           final elapsed = arrival.difference(departAfter).inMinutes;
           final cost = elapsed + transfers * config.transferPenaltyMinutes;
 
-          final nextKey = '${stopRef.stopId}|$transfers';
+          final nextTier = call.service.serviceClass.tier;
+          final nextKey = '${stopRef.stopId}|$transfers|$nextTier';
           final seen = best[nextKey];
           if (seen != null && seen <= cost) continue;
 
@@ -662,7 +666,8 @@ class JourneyPlanner {
           if (walk == null || walk.km > config.maxWalkKm) continue;
 
           final cost = label.cost + walk.minutes;
-          final nextKey = '$siblingId|${label.transfers}';
+          final tier = label.viaLeg?.serviceClass.tier ?? 0;
+          final nextKey = '$siblingId|${label.transfers}|$tier';
           final seen = best[nextKey];
           if (seen != null && seen <= cost) continue;
 

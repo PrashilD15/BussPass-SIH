@@ -73,7 +73,7 @@ const STANDS = [
   { id: 'sangli',          name: 'Sangli Bus Stand',          city: 'Sangli',   depot: 'Sangli',          lat: 16.8524, lng: 74.5815 },
   { id: 'satara',          name: 'Satara Bus Stand',          city: 'Satara',   depot: 'Satara',          lat: 17.6805, lng: 74.0183 },
   { id: 'solapur',         name: 'Solapur Bus Stand',         city: 'Solapur',  depot: 'Solapur',         lat: 17.6805, lng: 75.9064 },
-  { id: 'ahmednagar',      name: 'Ahmednagar Bus Stand',      city: 'Ahmednagar',depot: 'Ahmednagar',      lat: 19.0948, lng: 74.7480 },
+  { id: 'ahmednagar',      name: 'Ahilyanagar Bus Stand',      city: 'Ahilyanagar',depot: 'Ahilyanagar',      lat: 19.0948, lng: 74.7480 },
   // ── Nashik Division ──
   { id: 'nashik-cbs',      name: 'Nashik Central Bus Stand',  city: 'Nashik',   depot: 'Nashik CBS',      lat: 19.9975, lng: 73.7898 },
   { id: 'jalgaon',         name: 'Jalgaon Bus Stand',         city: 'Jalgaon',  depot: 'Jalgaon',         lat: 21.0077, lng: 75.5626 },
@@ -166,11 +166,14 @@ const ROUTES = [
   // Pune ⇄ Nashik
   ['pune-swargate',   'nashik-cbs',      212, ['Ordinary', 'Semi Luxury', 'Shivshahi'], ['Sangamner']],
   ['pune-station',    'nashik-cbs',      212, ['Ordinary', 'Semi Luxury'], ['Sangamner']],
+  // Sangamner ⇄ Mumbai (via Nashik)
+  ['mumbai-central',  'sangamner',       245, ['Ordinary', 'Semi Luxury', 'Shivshahi'], ['nashik-cbs']],
+  ['mumbai-borivali', 'sangamner',       250, ['Ordinary', 'Semi Luxury', 'Shivshahi'], ['nashik-cbs']],
   // Sangamner ⇄ Pune (Shivajinagar) — direct service via Rajgurunagar
   ['sangamner',       'pune-shivajinagar', 150, ['Ordinary', 'Semi Luxury', 'Shivshahi'], ['Rajgurunagar']],
-  // Pune ⇄ Ahmednagar ⇄ Aurangabad
+  // Pune ⇄ Ahilyanagar ⇄ Aurangabad
   ['pune-swargate',   'ahmednagar',      125, ['Ordinary', 'Semi Luxury', 'Shivshahi'], []],
-  ['pune-swargate',   'csn',             235, ['Ordinary', 'Semi Luxury', 'Shivshahi', 'Shivneri'], ['Ahmednagar']],
+  ['pune-swargate',   'csn',             235, ['Ordinary', 'Semi Luxury', 'Shivshahi', 'Shivneri'], ['Ahilyanagar']],
   ['ahmednagar',      'csn',             120, ['Ordinary', 'Semi Luxury'], []],
   // Pune ⇄ Solapur / Kolhapur / Satara
   ['pune-swargate',   'solapur',         250, ['Ordinary', 'Semi Luxury', 'Shivshahi'], ['Indapur']],
@@ -185,7 +188,7 @@ const ROUTES = [
   ['nashik-cbs',      'nandurbar',       230, ['Ordinary', 'Semi Luxury'], ['Dhule']],
   ['nashik-cbs',      'jalgaon',         255, ['Ordinary', 'Semi Luxury', 'Shivshahi'], []],
   ['jalgaon',         'dhule',           100,  ['Ordinary', 'Semi Luxury'], []],
-  ['jalgaon',         'pune-swargate',   425, ['Ordinary', 'Semi Luxury', 'Shivshahi'], ['Chhatrapati Sambhaji Nagar', 'Ahmednagar']],
+  ['jalgaon',         'pune-swargate',   425, ['Ordinary', 'Semi Luxury', 'Shivshahi'], ['Chhatrapati Sambhaji Nagar', 'Ahilyanagar']],
   ['dhule',           'nandurbar',       110, ['Ordinary'], []],
   // Aurangabad-centric
   ['csn',             'jalna',           65,  ['Ordinary', 'Semi Luxury'], []],
@@ -201,7 +204,7 @@ const ROUTES = [
   ['parbhani',        'hingoli',         70,  ['Ordinary'], []],
   ['beed',            'dharashiv',       110,  ['Ordinary'], []],
   ['pune-swargate',   'latur',           350, ['Ordinary', 'Semi Luxury', 'Shivshahi'], ['Solapur']],
-  ['pune-swargate',   'nanded',          500, ['Ordinary', 'Semi Luxury'], ['Ahmednagar', 'Latur']],
+  ['pune-swargate',   'nanded',          500, ['Ordinary', 'Semi Luxury'], ['Ahilyanagar', 'Latur']],
   ['solapur',         'pandharpur',      145, ['Ordinary', 'Semi Luxury'], []],
   ['solapur',         'latur',           120, ['Ordinary', 'Semi Luxury'], []],
   // Nagpur-centric
@@ -221,12 +224,12 @@ const ROUTES = [
   ['yavatmal',        'wardha',          90,  ['Ordinary'], []],
   ['yavatmal',        'nanded',          205, ['Ordinary', 'Semi Luxury'], ['Hingoli']],
   // Long-haul spine routes
-  ['nagpur-ganeshpeth', 'pune-swargate', 700, ['Ordinary', 'Semi Luxury', 'Shivshahi', 'Sleeper'], ['Amravati', 'Ahmednagar']],
+  ['nagpur-ganeshpeth', 'pune-swargate', 700, ['Ordinary', 'Semi Luxury', 'Shivshahi', 'Sleeper'], ['Amravati', 'Ahilyanagar']],
   ['nagpur-ganeshpeth', 'solapur',       610, ['Ordinary', 'Semi Luxury'], ['Amravati', 'Akola']],
   ['mumbai-central',  'nagpur-ganeshpeth', 840, ['Ordinary', 'Sleeper', 'Shivshahi'], ['Nashik', 'Akola', 'Amravati']],
   ['mumbai-central',  'amravati',        690, ['Ordinary', 'Sleeper', 'Shivshahi'], ['Nashik', 'Akola']],
-  ['pune-swargate',   'amravati',        560, ['Ordinary', 'Semi Luxury', 'Shivshahi'], ['Ahmednagar', 'Jalgaon']],
-  ['pune-swargate',   'akola',           500, ['Ordinary', 'Semi Luxury', 'Shivshahi'], ['Ahmednagar', 'Jalgaon']],
+  ['pune-swargate',   'amravati',        560, ['Ordinary', 'Semi Luxury', 'Shivshahi'], ['Ahilyanagar', 'Jalgaon']],
+  ['pune-swargate',   'akola',           500, ['Ordinary', 'Semi Luxury', 'Shivshahi'], ['Ahilyanagar', 'Jalgaon']],
   ['jalgaon',         'csn',             260, ['Ordinary', 'Semi Luxury', 'Shivshahi'], ['Manmad']],
   ['jalgaon',         'amravati',        265,  ['Ordinary', 'Semi Luxury'], ['Akola']],
   ['washim',          'nanded',          210, ['Ordinary'], ['Parbhani']],
