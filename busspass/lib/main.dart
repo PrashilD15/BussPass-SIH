@@ -7,6 +7,8 @@ import 'package:busspass/theme/app_theme.dart';
 import 'package:busspass/features/onboarding/presentation/language_screen.dart';
 import 'package:busspass/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:busspass/data/providers/auth_provider.dart';
+import 'package:busspass/data/providers/app_providers.dart';
+import 'package:busspass/data/repositories/local_store.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +18,7 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  final localStore = await LocalStore.open();
 
   runApp(
     EasyLocalization(
@@ -27,8 +30,11 @@ void main() async {
       ],
       path: 'assets/translations',
       fallbackLocale: const Locale('en'),
-      child: const ProviderScope(
-        child: BussPassApp(),
+      child: ProviderScope(
+        overrides: [
+          localStoreProvider.overrideWithValue(localStore),
+        ],
+        child: const BussPassApp(),
       ),
     ),
   );

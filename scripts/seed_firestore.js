@@ -1,295 +1,326 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// India State Transport (STC) Firestore Seed Script
+// MSRTC Firestore Seed Script (real data) — ENHANCED with per-stop pricing
 // Run with: node scripts/seed_firestore.js
 // Requires: npm install firebase-admin
-// ─────────────────────────────────────────────────────────────────────────────
-// USAGE:
-//  1. Download your Firebase service account key from:
-//     Firebase Console → Project Settings → Service Accounts → Generate new private key
-//  2. Save it as scripts/serviceAccountKey.json
-//  3. Run: npm install firebase-admin && node scripts/seed_firestore.js
+//
+// Consumes scripts/msrtc_data.js (real stands + route graph + MSRTC fare model)
+// and writes to Firestore with schema matching busspass/lib/data/models/bus_models.dart
+//
+// NEW in this version:
+//  1. Resolves via_stops to EXACT lat/lng (via STANDS + WAYPOINTS) so the map
+//     polyline follows the actual road corridor instead of a straight line.
+//  2. Computes cumulative distance at each stop (scaled to official route km).
+//  3. Computes the MSRTC stage-based fare at EVERY stop for EVERY bus type.
+//  4. Writes a `route_fares` collection: one doc per route with a per stop-pair
+//     fare matrix (per bus type) + total distance + cumulative stages.
+//  5. Adds a `stops` array (with lat/lng + cumulative km) to each route doc so
+//     the Flutter app can render an accurate polyline and intermediate markers.
 // ─────────────────────────────────────────────────────────────────────────────
 
+const fs = require('fs');
+const path = require('path');
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
-const serviceAccount = require('./serviceAccountKey.json');
+const {
+  BUS_TYPES,
+  computeFare,
+  durationHrs,
+  STANDS,
+  WAYPOINTS,
+  ROUTES,
+} = require('./msrtc_data.js');
+
+// Guard: do not run without a real (non-placeholder) service account key.
+const KEY_PATH = path.join(__dirname, 'serviceAccountKey.json');
+if (!fs.existsSync(KEY_PATH)) {
+  console.error('❌ serviceAccountKey.json not found in scripts/.');
+  console.error('   Add your Firebase service account key, then re-run.');
+  process.exit(1);
+}
+
+const serviceAccount = require(KEY_PATH);
 
 initializeApp({
   credential: cert(serviceAccount),
+  projectId: serviceAccount.project_id,
 });
 
 const db = getFirestore();
 
-// ── Bus Stops ─────────────────────────────────────────────────────────────────
-const busStops = [
-  // Mumbai
-  { id: 'mumbai-dadar',     name: 'Dadar Bus Stand',         city: 'Mumbai',   depot: 'Dadar',           lat: 19.0178, lng: 72.8478 },
-  { id: 'mumbai-central',   name: 'Mumbai Central ST Stand', city: 'Mumbai',   depot: 'Mumbai Central',  lat: 18.9686, lng: 72.8194 },
-  { id: 'mumbai-borivali',  name: 'Borivali Bus Stand',      city: 'Mumbai',   depot: 'Borivali',        lat: 19.2345, lng: 72.8562 },
-  { id: 'mumbai-thane',     name: 'Thane Vandana ST Stand',  city: 'Thane',    depot: 'Thane Vandana',   lat: 19.1890, lng: 72.9781 },
-  // Pune
-  { id: 'pune-swargate',    name: 'Swargate Bus Stand',      city: 'Pune',     depot: 'Swargate',        lat: 18.5013, lng: 73.8567 },
-  { id: 'pune-station',     name: 'Pune Station ST Stand',   city: 'Pune',     depot: 'Pune Station',    lat: 18.5284, lng: 73.8740 },
-  { id: 'pune-shivajinagar',name: 'Shivajinagar Bus Stand',  city: 'Pune',     depot: 'Shivajinagar',    lat: 18.5308, lng: 73.8475 },
-  { id: 'pune-wakad',       name: 'Wakad Bus Stop',          city: 'Pune',     depot: 'Wakad',           lat: 18.5900, lng: 73.7600 },
-  // Nashik
-  { id: 'nashik-cbs',       name: 'Nashik CBS Bus Stand',    city: 'Nashik',   depot: 'Nashik CBS',      lat: 19.9975, lng: 73.7898 },
-  { id: 'nashik-municipal', name: 'Nashik Municipal Stand',  city: 'Nashik',   depot: 'Nashik Municipal',lat: 19.9976, lng: 73.7901 },
-  // Kolhapur
-  { id: 'kolhapur-central', name: 'Kolhapur Central ST',     city: 'Kolhapur', depot: 'Kolhapur',        lat: 16.7050, lng: 74.2433 },
-  // Aurangabad / CSN
-  { id: 'csn-central',      name: 'CSN Bus Stand',           city: 'Chhatrapati Sambhaji Nagar', depot: 'CSN', lat: 19.8762, lng: 75.3433 },
-  // Solapur
-  { id: 'solapur-central',  name: 'Solapur Bus Stand',       city: 'Solapur',  depot: 'Solapur',         lat: 17.6805, lng: 75.9064 },
-  // Nagpur
-  { id: 'nagpur-ganeshpeth',name: 'Nagpur Ganeshpeth ST',    city: 'Nagpur',   depot: 'Ganeshpeth',      lat: 21.1458, lng: 79.0882 },
-  // Shirdi
-  { id: 'shirdi-st',        name: 'Shirdi Bus Stand',        city: 'Shirdi',   depot: 'Shirdi',          lat: 19.7667, lng: 74.4764 },
-  // Sangli
-  { id: 'sangli-st',        name: 'Sangli Bus Stand',        city: 'Sangli',   depot: 'Sangli',          lat: 16.8524, lng: 74.5815 },
-  // Satara
-  { id: 'satara-st',        name: 'Satara Bus Stand',        city: 'Satara',   depot: 'Satara',          lat: 17.6805, lng: 74.0183 },
-  // Ratnagiri
-  { id: 'ratnagiri-st',     name: 'Ratnagiri Bus Stand',     city: 'Ratnagiri',depot: 'Ratnagiri',       lat: 16.9944, lng: 73.3000 },
-  // Nanded
-  { id: 'nanded-st',        name: 'Nanded Bus Stand',        city: 'Nanded',   depot: 'Nanded',          lat: 19.1383, lng: 77.3210 },
-  // Jalgaon
-  { id: 'jalgaon-st',       name: 'Jalgaon Bus Stand',       city: 'Jalgaon',  depot: 'Jalgaon',         lat: 21.0077, lng: 75.5626 },
-  // Latur
-  { id: 'latur-st',         name: 'Latur Bus Stand',         city: 'Latur',    depot: 'Latur',           lat: 18.4088, lng: 76.5604 },
-  // Panvel
-  { id: 'panvel-st',        name: 'Panvel Bus Stand',        city: 'Panvel',   depot: 'Panvel',          lat: 18.9894, lng: 73.1175 },
-  // Lonavala
-  { id: 'lonavala-st',      name: 'Lonavala Bus Stand',      city: 'Lonavala', depot: 'Lonavala',        lat: 18.7481, lng: 73.4072 },
-  // Mahabaleshwar
-  { id: 'mahabaleshwar-st', name: 'Mahabaleshwar Bus Stand', city: 'Mahabaleshwar', depot: 'Mahabaleshwar', lat: 17.9244, lng: 73.6565 },
-];
+// ── First / last bus estimates based on journey family and bus type ─────────
+function busWindows(km) {
+  if (km > 600)
+    return { first: '06:00 PM', last: '09:00 PM' }; // overnight long-haul
+  if (km > 250)
+    return { first: '05:30 AM', last: '10:30 PM' };
+  if (km > 100)
+    return { first: '05:00 AM', last: '10:00 PM' };
+  return { first: '05:30 AM', last: '10:30 PM' };
+}
 
-// ── Routes ────────────────────────────────────────────────────────────────────
-const routes = [
-  {
-    id: 'mumbai-pune-shivneri',
-    name: 'Mumbai – Pune (Shivneri AC)',
-    origin_stop_id: 'mumbai-dadar',
-    destination_stop_id: 'pune-swargate',
-    origin_city: 'Mumbai',
-    destination_city: 'Pune',
-    distance_km: 150,
-    duration_hrs: '3-4 hrs',
-    fare_min: 306,
-    fare_max: 614,
-    bus_types: ['Shivneri AC', 'Semi Luxury', 'Ordinary'],
-    via_stops: ['Lonavala', 'Panvel'],
-    first_bus: '05:00 AM',
-    last_bus: '10:30 PM',
-  },
-  {
-    id: 'pune-nashik',
-    name: 'Pune – Nashik',
-    origin_stop_id: 'pune-swargate',
-    destination_stop_id: 'nashik-cbs',
-    origin_city: 'Pune',
-    destination_city: 'Nashik',
-    distance_km: 212,
-    duration_hrs: '4-5 hrs',
-    fare_min: 230,
-    fare_max: 440,
-    bus_types: ['Shivshahi', 'Semi Luxury', 'Ordinary'],
-    via_stops: ['Sinnar', 'Sangamner'],
-    first_bus: '06:00 AM',
-    last_bus: '09:00 PM',
-  },
-  {
-    id: 'nashik-shirdi',
-    name: 'Nashik – Shirdi',
-    origin_stop_id: 'nashik-cbs',
-    destination_stop_id: 'shirdi-st',
-    origin_city: 'Nashik',
-    destination_city: 'Shirdi',
-    distance_km: 90,
-    duration_hrs: '2-3 hrs',
-    fare_min: 100,
-    fare_max: 200,
-    bus_types: ['Ordinary', 'Semi Luxury'],
-    via_stops: ['Kopargaon'],
-    first_bus: '05:30 AM',
-    last_bus: '08:00 PM',
-  },
-  {
-    id: 'mumbai-nashik',
-    name: 'Mumbai – Nashik',
-    origin_stop_id: 'mumbai-central',
-    destination_stop_id: 'nashik-cbs',
-    origin_city: 'Mumbai',
-    destination_city: 'Nashik',
-    distance_km: 165,
-    duration_hrs: '3.5-5 hrs',
-    fare_min: 220,
-    fare_max: 420,
-    bus_types: ['Shivshahi', 'Semi Luxury', 'Ordinary'],
-    via_stops: ['Kasara', 'Igatpuri'],
-    first_bus: '06:00 AM',
-    last_bus: '11:00 PM',
-  },
-  {
-    id: 'mumbai-kolhapur',
-    name: 'Mumbai – Kolhapur',
-    origin_stop_id: 'mumbai-central',
-    destination_stop_id: 'kolhapur-central',
-    origin_city: 'Mumbai',
-    destination_city: 'Kolhapur',
-    distance_km: 376,
-    duration_hrs: '7-8 hrs',
-    fare_min: 420,
-    fare_max: 850,
-    bus_types: ['Shivshahi', 'Semi Luxury', 'Ordinary'],
-    via_stops: ['Pune', 'Satara', 'Sangli'],
-    first_bus: '06:30 AM',
-    last_bus: '10:30 PM',
-  },
-  {
-    id: 'pune-solapur',
-    name: 'Pune – Solapur',
-    origin_stop_id: 'pune-swargate',
-    destination_stop_id: 'solapur-central',
-    origin_city: 'Pune',
-    destination_city: 'Solapur',
-    distance_km: 240,
-    duration_hrs: '4-5 hrs',
-    fare_min: 250,
-    fare_max: 480,
-    bus_types: ['Ordinary', 'Semi Luxury'],
-    via_stops: ['Indapur', 'Barshi'],
-    first_bus: '06:00 AM',
-    last_bus: '10:00 PM',
-  },
-  {
-    id: 'pune-csn',
-    name: 'Pune – Chhatrapati Sambhaji Nagar',
-    origin_stop_id: 'pune-swargate',
-    destination_stop_id: 'csn-central',
-    origin_city: 'Pune',
-    destination_city: 'Chhatrapati Sambhaji Nagar',
-    distance_km: 235,
-    duration_hrs: '4-5 hrs',
-    fare_min: 260,
-    fare_max: 520,
-    bus_types: ['Shivshahi', 'Ordinary'],
-    via_stops: ['Ahmednagar'],
-    first_bus: '05:30 AM',
-    last_bus: '11:00 PM',
-  },
-  {
-    id: 'mumbai-shirdi',
-    name: 'Mumbai – Shirdi',
-    origin_stop_id: 'mumbai-central',
-    destination_stop_id: 'shirdi-st',
-    origin_city: 'Mumbai',
-    destination_city: 'Shirdi',
-    distance_km: 250,
-    duration_hrs: '5-6 hrs',
-    fare_min: 280,
-    fare_max: 560,
-    bus_types: ['Shivshahi', 'Ordinary'],
-    via_stops: ['Nashik', 'Kopargaon'],
-    first_bus: '06:00 AM',
-    last_bus: '09:00 PM',
-  },
-  {
-    id: 'pune-kolhapur',
-    name: 'Pune – Kolhapur',
-    origin_stop_id: 'pune-swargate',
-    destination_stop_id: 'kolhapur-central',
-    origin_city: 'Pune',
-    destination_city: 'Kolhapur',
-    distance_km: 228,
-    duration_hrs: '4-5 hrs',
-    fare_min: 240,
-    fare_max: 470,
-    bus_types: ['Shivshahi', 'Ordinary', 'Semi Luxury'],
-    via_stops: ['Satara', 'Sangli'],
-    first_bus: '06:00 AM',
-    last_bus: '10:30 PM',
-  },
-  {
-    id: 'thane-pune',
-    name: 'Thane – Pune',
-    origin_stop_id: 'mumbai-thane',
-    destination_stop_id: 'pune-swargate',
-    origin_city: 'Thane',
-    destination_city: 'Pune',
-    distance_km: 145,
-    duration_hrs: '3-4 hrs',
-    fare_min: 290,
-    fare_max: 580,
-    bus_types: ['Shivneri AC', 'Ordinary'],
-    via_stops: ['Lonavala'],
-    first_bus: '06:00 AM',
-    last_bus: '10:00 PM',
-  },
-  {
-    id: 'nagpur-pune',
-    name: 'Nagpur – Pune',
-    origin_stop_id: 'nagpur-ganeshpeth',
-    destination_stop_id: 'pune-swargate',
-    origin_city: 'Nagpur',
-    destination_city: 'Pune',
-    distance_km: 700,
-    duration_hrs: '12-14 hrs',
-    fare_min: 700,
-    fare_max: 1400,
-    bus_types: ['Shivshahi', 'Sleeper'],
-    via_stops: ['Wardha', 'Yavatmal', 'Latur'],
-    first_bus: '05:00 PM',
-    last_bus: '08:00 PM',
-  },
-  {
-    id: 'jalgaon-pune',
-    name: 'Jalgaon – Pune',
-    origin_stop_id: 'jalgaon-st',
-    destination_stop_id: 'pune-swargate',
-    origin_city: 'Jalgaon',
-    destination_city: 'Pune',
-    distance_km: 348,
-    duration_hrs: '6-8 hrs',
-    fare_min: 380,
-    fare_max: 760,
-    bus_types: ['Ordinary', 'Semi Luxury'],
-    via_stops: ['Dhule', 'Nashik'],
-    first_bus: '05:30 AM',
-    last_bus: '09:00 PM',
-  },
-];
+// ── Geography helpers ────────────────────────────────────────────────────────
+const R = 6371; // Earth radius (km)
 
-// ── Seed Function ─────────────────────────────────────────────────────────────
+function haversineKm(a, b) {
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const lat1 = (a.lat * Math.PI) / 180;
+  const lat2 = (b.lat * Math.PI) / 180;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+// ── Resolve a via-stop name to coordinates ───────────────────────────────────
+// Look in STANDS by city (case-insensitive, accepts partial match), then WAYPOINTS.
+function resolveStop(cityName) {
+  const q = String(cityName).trim().toLowerCase();
+  const stand = STANDS.find(
+    (s) => s.city.toLowerCase() === q || s.name.toLowerCase().includes(q)
+  );
+  if (stand) return { id: stand.id, name: stand.name, city: stand.city, lat: stand.lat, lng: stand.lng };
+  const wp = WAYPOINTS[q];
+  if (wp) return { id: q, name: titleCase(q), city: titleCase(q), lat: wp.lat, lng: wp.lng };
+  return null;
+}
+
+function titleCase(s) {
+  return s
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .trim();
+}// ── Build ordered stop sequence with cumulative distance ─────────────────────
+// Returns an array of { name, city, id, lat, lng, seq, cumKm } where cumKm is
+// the distance from the origin measured along the corridor. The intermediate
+// distances are proportionally scaled from the straight-line haversine ratios
+// so the TOTAL equals the official route distance_km.
+function buildStops(origin, dest, viaCities, routeKm) {
+  const sequence = [origin];
+  for (const v of viaCities) {
+    const resolved = resolveStop(v);
+    if (resolved) sequence.push(resolved);
+  }
+  sequence.push(dest);
+
+  // Raw straight-line segment lengths between consecutive stops.
+  const rawSegs = [];
+  for (let i = 0; i < sequence.length - 1; i++) {
+    rawSegs.push(haversineKm(sequence[i], sequence[i + 1]));
+  }
+  const rawTotal = rawSegs.reduce((a, b) => a + b, 0);
+
+  // Scale factor to hit the official route distance.
+  const scale = rawTotal > 0 ? routeKm / rawTotal : 1;
+
+  // Build cumulative km + seq.
+  const stops = [];
+  let cum = 0;
+  for (let i = 0; i < sequence.length; i++) {
+    stops.push({
+      id: sequence[i].id,
+      name: sequence[i].name,
+      city: sequence[i].city,
+      lat: sequence[i].lat,
+      lng: sequence[i].lng,
+      seq: i + 1,
+      cumKm: Math.round((i === 0 ? 0 : cum) * 10) / 10,
+    });
+    if (i < rawSegs.length) cum += rawSegs[i] * scale;
+  }
+  // Snap final cumulative to official distance.
+  stops[stops.length - 1].cumKm = routeKm;
+  return stops;
+}
+
+// ── MSRTC fare matrix per stop-pair for a route ──────────────────────────────
+// msrtc fares are stage-based: fare between stop i and stop j depends only on
+// the distance (cumKm[j] - cumKm[i]) — cheaper than full-fare because it's the
+// actual distance between those two points, computed via the per-6km stage model.
+function buildFareMatrix(stops, busTypes) {
+  const fares = {};
+  for (let i = 0; i < stops.length; i++) {
+    for (let j = i + 1; j < stops.length; j++) {
+      const dist = stops[j].cumKm - stops[i].cumKm;
+      const fromId = stops[i].id;
+      const toId = stops[j].id;
+      fares[`${fromId}__${toId}`] = {
+        from: stops[i].city,
+        to: stops[j].city,
+        fromStopId: fromId,
+        toStopId: toId,
+        fromSeq: stops[i].seq,
+        toSeq: stops[j].seq,
+        distanceKm: Math.round(dist),
+        byType: Object.fromEntries(
+          busTypes.map((t) => [t, computeFare(dist, t)])
+        ),
+      };
+    }
+  }
+  return fares;
+}
+
+// ── Build bus stops collection ───────────────────────────────────────────────
+function buildBusStops() {
+  return STANDS.map((s) => ({
+    id: s.id,
+    name: s.name,
+    city: s.city,
+    depot: s.depot,
+    lat: s.lat,
+    lng: s.lng,
+  }));
+}
+
+// ── Build routes collection (with `stops` for map polyline) ──────────────────
+function buildRoutes() {
+  const routes = [];
+  const stopById = Object.fromEntries(STANDS.map((s) => [s.id, s]));
+
+  for (const r of ROUTES) {
+    const [originStopId, destStopId, km, busTypes, viaStops] = r;
+    const origin = stopById[originStopId];
+    const dest = stopById[destStopId];
+    if (!origin || !dest) continue;
+
+    // fare_min = cheapest available bus, fare_max = most expensive (full route)
+    const fares = busTypes.map((t) => computeFare(km, t));
+    const fareMin = Math.min(...fares);
+    const fareMax = Math.max(...fares);
+
+    const { first, last } = busWindows(km);
+    const stops = buildStops(origin, dest, viaStops, km);
+
+    routes.push({
+      id: `${originStopId}-${destStopId}`,
+      name: `${origin.city} – ${dest.city}`,
+      origin_stop_id: origin.id,
+      destination_stop_id: dest.id,
+      origin_city: origin.city,
+      destination_city: dest.city,
+      distance_km: km,
+      duration_hrs: durationHrs(km),
+      fare_min: fareMin,
+      fare_max: fareMax,
+      bus_types: busTypes,
+      via_stops: viaStops,
+      // NEW: ordered stops with coords + cumulative km (for accurate polyline)
+      stops: stops.map((s) => ({
+        stop_id: s.id,
+        name: s.name,
+        city: s.city,
+        lat: s.lat,
+        lng: s.lng,
+        seq: s.seq,
+        cum_km: s.cumKm,
+      })),
+      first_bus: first,
+      last_bus: last,
+    });
+  }
+  return routes;
+}
+
+// ── Build route_fares collection (per stop-pair fare matrix) ─────────────────
+function buildRouteFares(routes) {
+  const fareDocs = [];
+  for (const route of routes) {
+    const stops = route.stops.map((s) => ({
+      id: s.stop_id,
+      city: s.city,
+      seq: s.seq,
+      cumKm: s.cum_km,
+      lat: s.lat,
+      lng: s.lng,
+    }));
+    const matrix = buildFareMatrix(stops, route.bus_types);
+
+    fareDocs.push({
+      id: route.id,
+      route_name: route.name,
+      origin_stop_id: route.origin_stop_id,
+      destination_stop_id: route.destination_stop_id,
+      origin_city: route.origin_city,
+      destination_city: route.destination_city,
+      distance_km: route.distance_km,
+      bus_types: route.bus_types,
+      fare_min: route.fare_min,
+      fare_max: route.fare_max,
+      total_stops: stops.length,
+      by_type: Object.fromEntries(
+        route.bus_types.map((t) => [t, computeFare(route.distance_km, t)])
+      ),
+      // Map of "fromStopId__toStopId" -> segment fare info
+      segments: matrix,
+    });
+  }
+  return fareDocs;
+}
+
+// ── Cleanup stale docs (removed src) so a re-run never leaves data orphaned ──
+async function cleanupStale(collectionName, validIds) {
+  const snap = await db.collection(collectionName).get();
+  const stale = snap.docs.filter((d) => !validIds.has(d.id));
+  const batch = db.batch();
+  for (const doc of stale) batch.delete(doc.ref);
+  if (stale.length > 0) await batch.commit();
+  return stale.length;
+}
+
+// ── Seed ─────────────────────────────────────────────────────────────────────
 async function seedData() {
-  console.log('🚌 Starting India State Transport Firestore seed...\n');
+  console.log('🚌 Starting MSRTC Firestore seed (enhanced w/ per-stop fares)...\n');
 
-  // Seed Bus Stops
+  const busStops = buildBusStops();
+  const routes = buildRoutes();
+  const routeFares = buildRouteFares(routes);
+
+  // Remove documents that are no longer in the dataset (e.g. old placeholder IDs).
+  const stopIds = new Set(STANDS.map((s) => s.id));
+  const routeIds = new Set(ROUTES.map((r) => `${r[0]}-${r[1]}`));
+  const removedStops = await cleanupStale('bus_stops', stopIds);
+  const removedRoutes = await cleanupStale('routes', routeIds);
+  const removedFares = await cleanupStale('route_fares', routeIds);
+  if (removedStops) console.log(`🗑️  Removed ${removedStops} stale bus stops`);
+  if (removedRoutes) console.log(`🗑️  Removed ${removedRoutes} stale routes`);
+  if (removedFares) console.log(`🗑️  Removed ${removedFares} stale route_fares`);
+
   console.log(`📍 Seeding ${busStops.length} bus stops...`);
   const stopBatch = db.batch();
   for (const stop of busStops) {
     const { id, ...data } = stop;
-    const ref = db.collection('bus_stops').doc(id);
-    stopBatch.set(ref, data);
+    stopBatch.set(db.collection('bus_stops').doc(id), data);
   }
   await stopBatch.commit();
   console.log('✅ Bus stops seeded!\n');
 
-  // Seed Routes
-  console.log(`🗺️  Seeding ${routes.length} routes...`);
+  console.log(`🗺️  Seeding ${routes.length} routes (with stop coordinates)...`);
   const routeBatch = db.batch();
   for (const route of routes) {
     const { id, ...data } = route;
-    const ref = db.collection('routes').doc(id);
-    routeBatch.set(ref, data);
+    routeBatch.set(db.collection('routes').doc(id), data);
   }
   await routeBatch.commit();
   console.log('✅ Routes seeded!\n');
 
+  console.log(`💰 Seeding ${routeFares.length} route_fares docs (per stop-pair)...`);
+  const fareBatch = db.batch();
+  for (const doc of routeFares) {
+    const { id, ...data } = doc;
+    fareBatch.set(db.collection('route_fares').doc(id), data);
+  }
+  await fareBatch.commit();
+
+  let segmentTotal = 0;
+  for (const d of routeFares) segmentTotal += Object.keys(d.segments).length;
+  console.log(`✅ Route fares seeded (${segmentTotal} stop-pair segments total)!\n`);
+
   console.log('🎉 Firestore seed complete!');
   console.log(`   ${busStops.length} bus stops`);
   console.log(`   ${routes.length} routes`);
+  console.log(`   ${routeFares.length} route_fares docs with ${segmentTotal} fare segments`);
   process.exit(0);
 }
 

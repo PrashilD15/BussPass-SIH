@@ -125,7 +125,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               PrimaryButton(
                 label: 'Google',
                 onPressed: _isGoogleLoading ? null : _signInWithGoogle,
-                isLoading: _isGoogleLoading,
+                loading: _isGoogleLoading,
                 icon: Icons.g_mobiledata_rounded,
                 backgroundColor: AppColors.surface,
               ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.15),

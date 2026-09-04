@@ -4,18 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:busspass/data/models/bus_models.dart';
-import 'package:busspass/data/repositories/bus_stop_repository.dart';
-
-// ── Repository provider ──────────────────────────────────────────────────────
-final busStopRepositoryProvider = Provider<BusStopRepository>((ref) {
-  return BusStopRepository();
-});
-
-// ── All bus stops ────────────────────────────────────────────────────────────
-final allBusStopsProvider = FutureProvider<List<BusStop>>((ref) async {
-  return ref.read(busStopRepositoryProvider).getAllStops();
-});
+import 'package:busspass/data/models/network_models.dart';
+import 'package:busspass/data/providers/app_providers.dart';
 
 // ── User's current location ──────────────────────────────────────────────────
 final userLocationProvider = FutureProvider<Position?>((ref) async {
@@ -36,10 +26,31 @@ final userLocationProvider = FutureProvider<Position?>((ref) async {
   );
 });
 
+// ── Current Map Zoom ────────────────────────────────────────────────────────
+class CurrentMapZoomNotifier extends Notifier<double> {
+  @override
+  double build() => 12.0;
+  void setZoom(double z) => state = z;
+}
+
+final currentMapZoomProvider =
+    NotifierProvider<CurrentMapZoomNotifier, double>(CurrentMapZoomNotifier.new);
+
+final busStopMarkerScaleProvider = Provider<double>((ref) {
+  final zoom = ref.watch(currentMapZoomProvider);
+  if (zoom < 6.5) return 0.25;
+  if (zoom < 8.5) return 0.4;
+  if (zoom < 10.5) return 0.6;
+  if (zoom < 12.0) return 0.8;
+  return 1.0;
+});
+
 // ── Custom Marker Generator ──────────────────────────────────────────────────
-Future<BitmapDescriptor> _createCustomBusStopMarker() async {
+Future<BitmapDescriptor> _createCustomBusStopMarker(double scale) async {
   final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
   final Canvas canvas = Canvas(pictureRecorder);
+
+  canvas.scale(scale, scale);
 
   // Draw background circle (Premium Slate)
   final Paint backgroundPaint = Paint()..color = const Color(0xFF2F3E46);
@@ -72,10 +83,11 @@ Future<BitmapDescriptor> _createCustomBusStopMarker() async {
     ),
   );
   textPainter.layout();
-  textPainter.paint(
-      canvas, Offset(60 - (textPainter.width / 2), 50 - (textPainter.height / 2)));
+  textPainter.paint(canvas,
+      Offset(60 - (textPainter.width / 2), 50 - (textPainter.height / 2)));
 
-  final ui.Image image = await pictureRecorder.endRecording().toImage(120, 120);
+  final int size = (120 * scale).round();
+  final ui.Image image = await pictureRecorder.endRecording().toImage(size, size);
   final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
   final Uint8List uint8List = byteData!.buffer.asUint8List();
 
@@ -83,20 +95,39 @@ Future<BitmapDescriptor> _createCustomBusStopMarker() async {
 }
 
 // ── Convert bus stops to map markers ─────────────────────────────────────────
-final busStopMarkersProvider = FutureProvider<Set<Marker>>((ref) async {
-  final stops = await ref.watch(allBusStopsProvider.future);
-  final customIcon = await _createCustomBusStopMarker();
 
-  return stops.asMap().entries.map((entry) {
-    final stop = entry.value;
-    return Marker(
-      markerId: MarkerId(stop.id),
-      position: LatLng(stop.lat, stop.lng),
-      infoWindow: InfoWindow(
-        title: stop.name,
-        snippet: stop.city,
-      ),
-      icon: customIcon,
-    );
-  }).toSet();
+/// A tappable stop marker plus its backing stop.
+///
+/// The tab attaches the `Marker.onTap` so tapping a marker opens the stop's
+/// detail sheet. Separating the stop from the marker here is what lets the
+/// marker stay a plain Google Maps object while the sheet keeps a real
+/// [NetworkStop].
+typedef StopTapTarget = ({Marker marker, NetworkStop stop});
+
+/// One marker per stop, carrying its backing stop so a tap can be resolved.
+final busStopTargetsProvider = FutureProvider<List<StopTapTarget>>((ref) async {
+  final stops = await ref.watch(allStopsProvider.future);
+  final scale = ref.watch(busStopMarkerScaleProvider);
+  final customIcon = await _createCustomBusStopMarker(scale);
+
+  return stops
+      .map((stop) => (
+            marker: Marker(
+              markerId: MarkerId(stop.id),
+              position: LatLng(stop.lat, stop.lng),
+              infoWindow: InfoWindow(
+                title: stop.name,
+                snippet: stop.city,
+              ),
+              icon: customIcon,
+            ),
+            stop: stop,
+          ))
+      .toList();
+});
+
+/// Backward-compatible set of markers for map renders that do not need taps.
+final busStopMarkersProvider = FutureProvider<Set<Marker>>((ref) async {
+  final targets = await ref.watch(busStopTargetsProvider.future);
+  return targets.map((t) => t.marker).toSet();
 });

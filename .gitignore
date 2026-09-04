@@ -23,3 +23,9 @@ yarn-error.log
 # Build outputs
 build/
 dist/
+
+# Large Data Dumps
+scraped_raw.json
+master_timetables.json
+timetables_parsed.json
+scripts/uploaded_urls.json

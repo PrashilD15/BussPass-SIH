@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:busspass/data/providers/auth_provider.dart';
 import 'package:busspass/features/journey/presentation/journey_search_screen.dart';
+import 'package:busspass/features/timetable/presentation/timetables_screen.dart';
 import 'package:busspass/theme/app_colors.dart';
 import 'package:busspass/theme/app_theme.dart';
 import 'package:busspass/theme/widgets/app_widgets.dart';
@@ -94,7 +95,7 @@ class HomeTab extends ConsumerWidget {
                   _QuickAction(
                     icon: Icons.schedule_outlined,
                     label: 'Timetables',
-                    onTap: () {},
+                    onTap: () => _openTimetables(context),
                   ).animate().fadeIn(delay: 380.ms).slideY(begin: 0.08),
                   _QuickAction(
                     icon: Icons.qr_code_scanner_outlined,
@@ -177,6 +178,25 @@ class HomeTab extends ConsumerWidget {
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
             const JourneySearchScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(0.0, 1.0);
+          const end = Offset.zero;
+          const curve = Curves.easeOutCubic;
+          var tween =
+              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          return SlideTransition(
+              position: animation.drive(tween), child: child);
+        },
+      ),
+    );
+  }
+
+  void _openTimetables(BuildContext context) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const TimetablesScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           const begin = Offset(0.0, 1.0);
           const end = Offset.zero;

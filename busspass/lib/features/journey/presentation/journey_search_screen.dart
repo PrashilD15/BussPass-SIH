@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:busspass/data/providers/map_provider.dart';
-import 'package:busspass/data/models/bus_models.dart';
+import 'package:busspass/data/providers/app_providers.dart';
+import 'package:busspass/data/models/network_models.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:busspass/features/journey/presentation/journey_details_screen.dart';
-import 'package:busspass/data/providers/route_provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:busspass/theme/app_colors.dart';
 import 'package:busspass/theme/app_theme.dart';
@@ -23,11 +22,11 @@ class _JourneySearchScreenState extends ConsumerState<JourneySearchScreen> {
   final FocusNode _toFocusNode = FocusNode();
   final FocusNode _fromFocusNode = FocusNode();
 
-  List<BusStop> _filteredStops = [];
+  List<NetworkStop> _filteredStops = [];
   bool _isTyping = false;
   bool _isLocating = false;
-  BusStop? _selectedOrigin;
-  BusStop? _selectedDestination;
+  NetworkStop? _selectedOrigin;
+  NetworkStop? _selectedDestination;
   String _activeField = 'to';
 
   @override
@@ -38,7 +37,7 @@ class _JourneySearchScreenState extends ConsumerState<JourneySearchScreen> {
         setState(() {
           _activeField = 'from';
           _onSearchChanged(
-              _fromController.text, ref.read(allBusStopsProvider).value ?? []);
+              _fromController.text, ref.read(allStopsProvider).value ?? []);
         });
       }
     });
@@ -47,7 +46,7 @@ class _JourneySearchScreenState extends ConsumerState<JourneySearchScreen> {
         setState(() {
           _activeField = 'to';
           _onSearchChanged(
-              _toController.text, ref.read(allBusStopsProvider).value ?? []);
+              _toController.text, ref.read(allStopsProvider).value ?? []);
         });
       }
     });
@@ -65,7 +64,7 @@ class _JourneySearchScreenState extends ConsumerState<JourneySearchScreen> {
     super.dispose();
   }
 
-  void _onSearchChanged(String query, List<BusStop> allStops) {
+  void _onSearchChanged(String query, List<NetworkStop> allStops) {
     if (query.isEmpty) {
       setState(() {
         _filteredStops = [];
@@ -73,12 +72,15 @@ class _JourneySearchScreenState extends ConsumerState<JourneySearchScreen> {
       });
       return;
     }
+    final q = query.toLowerCase();
     setState(() {
       _isTyping = true;
       _filteredStops = allStops
           .where((stop) =>
-              stop.name.toLowerCase().contains(query.toLowerCase()) ||
-              stop.city.toLowerCase().contains(query.toLowerCase()))
+              stop.name.toLowerCase().contains(q) ||
+              stop.city.toLowerCase().contains(q) ||
+              stop.depot.toLowerCase().contains(q) ||
+              stop.district.toLowerCase().contains(q))
           .take(10)
           .toList();
     });
@@ -116,10 +118,10 @@ class _JourneySearchScreenState extends ConsumerState<JourneySearchScreen> {
       ).catchError((_) {
         throw Exception('Location request timed out. Please enter manually.');
       });
-      final allStops = ref.read(allBusStopsProvider).value ?? [];
+      final allStops = ref.read(allStopsProvider).value ?? [];
       if (allStops.isEmpty) return;
 
-      BusStop? nearest;
+      NetworkStop? nearest;
       double minDistance = double.infinity;
       for (var stop in allStops) {
         double distance = Geolocator.distanceBetween(
@@ -146,7 +148,8 @@ class _JourneySearchScreenState extends ConsumerState<JourneySearchScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Could not get GPS location. Please type manually.'),
+            content:
+                const Text('Could not get GPS location. Please type manually.'),
             backgroundColor: AppColors.danger,
           ),
         );
@@ -158,49 +161,16 @@ class _JourneySearchScreenState extends ConsumerState<JourneySearchScreen> {
 
   Future<void> _checkAndNavigate() async {
     if (_selectedOrigin == null || _selectedDestination == null) return;
-
-    final allRoutes = await ref.read(allRoutesProvider.future);
-
-    // Check both origin and destination city
-    final validRoutes = allRoutes.where((r) {
-      final originMatch =
-          r.originCity.toLowerCase() == _selectedOrigin!.city.toLowerCase();
-      final destMatch =
-          r.destinationCity.toLowerCase() == _selectedDestination!.city.toLowerCase();
-      return originMatch && destMatch;
-    }).toList();
-
-    // Also check reverse direction
-    final reverseRoutes = allRoutes.where((r) {
-      final originMatch =
-          r.originCity.toLowerCase() == _selectedDestination!.city.toLowerCase();
-      final destMatch =
-          r.destinationCity.toLowerCase() == _selectedOrigin!.city.toLowerCase();
-      return originMatch && destMatch;
-    }).toList();
-
-    final allMatching = [...validRoutes, ...reverseRoutes];
-
-    if (allMatching.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'No direct routes available from ${_selectedOrigin!.city} to ${_selectedDestination!.city}'),
-            backgroundColor: AppColors.ink,
-          ),
-        );
-      }
-      return;
-    }
+    final origin = _selectedOrigin!;
+    final dest = _selectedDestination!;
 
     if (mounted) {
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => JourneyDetailsScreen(
-            origin: _selectedOrigin!,
-            destination: _selectedDestination!,
+            originId: origin.id,
+            destinationId: dest.id,
           ),
         ),
       );
@@ -209,7 +179,7 @@ class _JourneySearchScreenState extends ConsumerState<JourneySearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final stopsAsync = ref.watch(allBusStopsProvider);
+    final stopsAsync = ref.watch(allStopsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -272,8 +242,7 @@ class _JourneySearchScreenState extends ConsumerState<JourneySearchScreen> {
                           controller: _fromController,
                           focusNode: _fromFocusNode,
                           hint: 'From where?',
-                          onChanged: (val) =>
-                              _onSearchChanged(val, allStops),
+                          onChanged: (val) => _onSearchChanged(val, allStops),
                           suffixIcon: _isLocating
                               ? const Padding(
                                   padding: EdgeInsets.all(12.0),
@@ -300,8 +269,7 @@ class _JourneySearchScreenState extends ConsumerState<JourneySearchScreen> {
                           controller: _toController,
                           focusNode: _toFocusNode,
                           hint: 'Where to?',
-                          onChanged: (val) =>
-                              _onSearchChanged(val, allStops),
+                          onChanged: (val) => _onSearchChanged(val, allStops),
                         ),
                       ],
                     ),
@@ -318,7 +286,7 @@ class _JourneySearchScreenState extends ConsumerState<JourneySearchScreen> {
                             readOnly: true),
                       ],
                     ),
-                    error: (_, __) => Column(
+                    error: (_, _) => Column(
                       children: [
                         _SearchInput(
                             controller: _fromController,
@@ -423,6 +391,7 @@ class _JourneySearchScreenState extends ConsumerState<JourneySearchScreen> {
   }
 
   Widget _buildRecentSearches() {
+    final recent = ref.watch(recentSearchesProvider);
     return ListView(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
       children: [
@@ -437,16 +406,24 @@ class _JourneySearchScreenState extends ConsumerState<JourneySearchScreen> {
                 ),
           ),
         ),
-        _RecentItem(
-            icon: Icons.history_rounded,
-            title: 'Mumbai Central',
-            subtitle: 'Mumbai'),
-        _RecentItem(
-          icon: Icons.star_rounded,
-          title: 'Swargate Bus Stand',
-          subtitle: 'Saved Place',
-          iconColor: AppColors.accent,
-        ),
+        if (recent.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+            child: Text(
+              'No recent searches yet. Search to plan a journey.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: 13,
+                    color: AppColors.inkMuted,
+                  ),
+            ),
+          )
+        else
+          ...recent.map((r) => _RecentItem(
+                originId: r.originStopId,
+                destinationId: r.destinationStopId,
+                title: r.originName,
+                subtitle: '→ ${r.destinationName}',
+              )),
       ],
     ).animate().fadeIn();
   }
@@ -456,7 +433,6 @@ class _SearchInput extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final bool readOnly;
-  final bool autoFocus;
   final FocusNode? focusNode;
   final ValueChanged<String>? onChanged;
   final Widget? suffixIcon;
@@ -465,7 +441,6 @@ class _SearchInput extends StatelessWidget {
     required this.controller,
     required this.hint,
     this.readOnly = false,
-    this.autoFocus = false,
     this.focusNode,
     this.onChanged,
     this.suffixIcon,
@@ -483,7 +458,6 @@ class _SearchInput extends StatelessWidget {
         controller: controller,
         focusNode: focusNode,
         readOnly: readOnly,
-        autofocus: autoFocus,
         onChanged: onChanged,
         style: Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 15),
         decoration: InputDecoration(
@@ -505,16 +479,16 @@ class _SearchInput extends StatelessWidget {
 }
 
 class _RecentItem extends ConsumerWidget {
-  final IconData icon;
+  final String originId;
+  final String destinationId;
   final String title;
   final String subtitle;
-  final Color? iconColor;
 
   const _RecentItem({
-    required this.icon,
+    required this.originId,
+    required this.destinationId,
     required this.title,
     required this.subtitle,
-    this.iconColor,
   });
 
   @override
@@ -529,7 +503,8 @@ class _RecentItem extends ConsumerWidget {
           shape: BoxShape.circle,
           border: Border.all(color: AppColors.hairline),
         ),
-        child: Icon(icon, color: iconColor ?? AppColors.inkMuted, size: 18),
+        child: const Icon(Icons.history_rounded,
+            color: AppColors.inkMuted, size: 18),
       ),
       title: Text(
         title,
@@ -546,23 +521,13 @@ class _RecentItem extends ConsumerWidget {
             ?.copyWith(fontSize: 12),
       ),
       onTap: () {
-        final allStops = ref.read(allBusStopsProvider).value ?? [];
-        final origin = allStops.firstWhere(
-          (s) => s.name == title || s.city == subtitle,
-          orElse: () => allStops.first,
-        );
-        // Find a destination in a different city
-        final dest = allStops.firstWhere(
-          (s) => s.city != origin.city,
-          orElse: () => allStops.last,
-        );
         if (context.mounted) {
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) => JourneyDetailsScreen(
-                origin: origin,
-                destination: dest,
+                originId: originId,
+                destinationId: destinationId,
               ),
             ),
           );

@@ -29,7 +29,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
     context.setLocale(Locale(_selectedCode));
     Navigator.of(context).push(
       PageRouteBuilder(
-        pageBuilder: (_, animation, __) => const AuthScreen(),
+        pageBuilder: (_, animation, _) => const AuthScreen(),
         transitionsBuilder: (_, animation, secondaryAnimation, child) {
           return FadeTransition(
             opacity: animation,

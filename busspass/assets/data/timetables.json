@@ -1,0 +1,564 @@
+[
+  {
+    "destination": "PUNE",
+    "times": [
+      "4:00 AM",
+      "5:00 AM",
+      "5:30 AM",
+      "6:00 AM",
+      "6:30 AM",
+      "7:00 AM",
+      "7:30 AM",
+      "8:00 AM",
+      "8:30 AM",
+      "9:00 AM",
+      "9:15 AM",
+      "9:30 AM",
+      "10:00 AM",
+      "10:05 AM",
+      "10:30 AM",
+      "11:00 AM",
+      "11:15 AM",
+      "11:30 AM",
+      "12:00 PM",
+      "12:15 PM",
+      "12:30 AM",
+      "1:00 PM",
+      "1:30 PM",
+      "2:00 PM",
+      "3:00 PM",
+      "4:00 PM",
+      "4:30 PM",
+      "5:00 PM",
+      "6:00 PM",
+      "7:00 PM",
+      "8:00 PM",
+      "9:00 PM",
+      "10:00 PM",
+      "11:00 PM"
+    ],
+    "distance_km": null,
+    "bus_type": null
+  },
+  {
+    "destination": "SWARGATE",
+    "times": [
+      "6:00 AM",
+      "7:00 AM",
+      "8:00 AM",
+      "9:00 AM",
+      "10:00 AM",
+      "10:45 AM",
+      "11:00 AM",
+      "11:45 AM",
+      "12:00 PM",
+      "12:45 PM",
+      "1:00 PM",
+      "1:30 PM",
+      "2:00 PM",
+      "2:30 PM",
+      "3:00 PM",
+      "3:30 PM",
+      "4:00 PM",
+      "4:30 PM",
+      "5:00 PM",
+      "5:30 PM",
+      "6:00 PM",
+      "6:30 PM",
+      "7:15 PM",
+      "7:30 PM",
+      "8:15 PM",
+      "8:30 PM",
+      "9:30 PM",
+      "10:00 PM",
+      "10:30 PM",
+      "11:00 PM",
+      "11:30 PM",
+      "12:30 AM",
+      "1:30 AM",
+      "2:30 AM"
+    ],
+    "distance_km": null,
+    "bus_type": null
+  },
+  {
+    "destination": "PIMPRI CHINCHWAD",
+    "times": [
+      "4:30 AM",
+      "7:15 AM",
+      "4:45 PM"
+    ],
+    "distance_km": "203",
+    "bus_type": "E-SHIVNERI"
+  },
+  {
+    "destination": "PIMPRI CHINCHWADTIME 6:15 AM",
+    "times": [
+      "7:15 AM",
+      "8:15 AM",
+      "1:30 PM",
+      "2:30 PM",
+      "4:45 PM",
+      "5:45 PM"
+    ],
+    "distance_km": "203",
+    "bus_type": "ASHIAD"
+  },
+  {
+    "destination": "HINJWADI",
+    "times": [
+      "4:00 AM"
+    ],
+    "distance_km": null,
+    "bus_type": null
+  },
+  {
+    "destination": "SELWAS",
+    "times": [
+      "5:15 AM"
+    ],
+    "distance_km": null,
+    "bus_type": null
+  },
+  {
+    "destination": "KOLHAPUR",
+    "times": [
+      "5:30 AM",
+      "7:30 PM"
+    ],
+    "distance_km": null,
+    "bus_type": null
+  },
+  {
+    "destination": "SATPUR",
+    "times": [
+      "9:35 AM"
+    ],
+    "distance_km": null,
+    "bus_type": null
+  },
+  {
+    "destination": "SANGALI",
+    "times": [
+      "7:15 PM"
+    ],
+    "distance_km": null,
+    "bus_type": null
+  },
+  {
+    "destination": "इंदूर",
+    "times": [
+      "सकाळी ७:१५"
+    ],
+    "distance_km": "४२८",
+    "bus_type": "लालपरी"
+  },
+  {
+    "destination": "सुरत",
+    "times": [
+      "सकाळी 10:30"
+    ],
+    "distance_km": "290",
+    "bus_type": "हिरकणी"
+  },
+  {
+    "destination": "कोल्हापुर",
+    "times": [
+      "5:30 AM",
+      "7:30 PM"
+    ],
+    "distance_km": "४५२",
+    "bus_type": "शिवशाही"
+  },
+  {
+    "destination": "अहमदाबाद",
+    "times": [
+      "रात्री ८:३०"
+    ],
+    "distance_km": "५२६",
+    "bus_type": "शय्यान असनी"
+  },
+  {
+    "destination": "शेगाव",
+    "times": [
+      "सकाळी ८:००"
+    ],
+    "distance_km": "417",
+    "bus_type": "हिरकणी"
+  },
+  {
+    "destination": "सोलापूर",
+    "times": [
+      "8:15 PM"
+    ],
+    "distance_km": "४९८",
+    "bus_type": "हिरकणी"
+  },
+  {
+    "destination": "पंढरपूर",
+    "times": [
+      "सकाळी 9:00",
+      "संध्याकाळी 6:30"
+    ],
+    "distance_km": "359",
+    "bus_type": "विठाई"
+  },
+  {
+    "destination": "बुलढाण्या",
+    "times": [
+      "सकाळी ७:१५"
+    ],
+    "distance_km": "३४५",
+    "bus_type": "हिरकणी"
+  },
+  {
+    "destination": "नागपूर",
+    "times": [
+      "रात्री ८:००"
+    ],
+    "distance_km": "७०९",
+    "bus_type": "शय्यान असानी"
+  },
+  {
+    "destination": "लातूर",
+    "times": [
+      "संध्याकाळी ५:००"
+    ],
+    "distance_km": "४२८",
+    "bus_type": "लालपरी"
+  },
+  {
+    "destination": "जिंतूर",
+    "times": [
+      "सकाळी ६:३०"
+    ],
+    "distance_km": "३७२",
+    "bus_type": "लालपरी"
+  },
+  {
+    "destination": "वाघई",
+    "times": [
+      "सकाळी ६:४५"
+    ],
+    "distance_km": "170",
+    "bus_type": "लालपरी"
+  },
+  {
+    "destination": "वापी",
+    "times": [
+      "सकाळी 7:00",
+      "सकाळी 8:00",
+      "सकाळी 10:00",
+      "दुपारी 12:00"
+    ],
+    "distance_km": "१५३",
+    "bus_type": "लालपरी"
+  },
+  {
+    "destination": "पिंपळनारे",
+    "times": [
+      "सकाळी ६:१५"
+    ],
+    "distance_km": "२१",
+    "bus_type": "लालपरी"
+  },
+  {
+    "destination": "सेल्वास",
+    "times": [
+      "4:30 AM"
+    ],
+    "distance_km": "१६८",
+    "bus_type": "लालपरी"
+  },
+  {
+    "destination": "नंदुरबार",
+    "times": [
+      "सकाळी 6:00",
+      "सकाळी 7:00",
+      "सकाळी 7:15"
+    ],
+    "distance_km": "216",
+    "bus_type": "लालपरी"
+  },
+  {
+    "destination": "नंदुरबार (मुंगबारी)",
+    "times": [
+      "सकाळी ७:१५"
+    ],
+    "distance_km": "206",
+    "bus_type": "लालपरी"
+  },
+  {
+    "destination": "शिंगणापूर",
+    "times": [
+      "सकाळी ८:००"
+    ],
+    "distance_km": "१६३",
+    "bus_type": "हिरकणी"
+  },
+  {
+    "destination": "चोपडा",
+    "times": [
+      "दुपारी १:३०",
+      "दुपारी ४:३०",
+      "सकाळी 6:00",
+      "सकाळी 7:00",
+      "सकाळी 8:00",
+      "सकाळी 9:00",
+      "सकाळी 10:00",
+      "सकाळी 11:00",
+      "दुपारी 12:00",
+      "दुपारी 1:00",
+      "दुपारी 3:00",
+      "4:00 PM",
+      "5:00 PM",
+      "6:00 PM",
+      "7:00 PM"
+    ],
+    "distance_km": "203",
+    "bus_type": "शिवशाही"
+  },
+  {
+    "destination": "बोरिवली",
+    "times": [
+      "सकाळी 6:00",
+      "सकाळी 7:00",
+      "सकाळी 8:00",
+      "सकाळी 9:00",
+      "सकाळी 10:00",
+      "सकाळी 11:00"
+    ],
+    "distance_km": "१७१",
+    "bus_type": "इलेक्ट्रिक बस"
+  },
+  {
+    "destination": "बोरिवली",
+    "times": [
+      "11:30 AM",
+      "1:00 PM",
+      "1:30 PM",
+      "2:30 PM",
+      "3:30 PM",
+      "4:30 PM",
+      "5:30 PM",
+      "7:00 PM"
+    ],
+    "distance_km": "१७१",
+    "bus_type": "शिवशाही"
+  },
+  {
+    "destination": "दादर",
+    "times": [
+      "दुपारी ३:००",
+      "संध्याकाळी ५:००"
+    ],
+    "distance_km": "१७६",
+    "bus_type": "शिवशाही"
+  },
+  {
+    "destination": "मुंबई सेंट्रल",
+    "times": [
+      "सकाळी 6:15",
+      "सकाळी 9:00",
+      "सकाळी 11:00"
+    ],
+    "distance_km": "182",
+    "bus_type": "शिवशाही"
+  },
+  {
+    "destination": "पुण्या",
+    "times": [
+      "सकाळी १०:०५"
+    ],
+    "distance_km": "212",
+    "bus_type": "शिवशाही"
+  },
+  {
+    "destination": "पुण्या",
+    "times": [
+      "सकाळी 4:30",
+      "सकाळी 5:30",
+      "सकाळी 6:30",
+      "सकाळी 7:30",
+      "सकाळी 8:30",
+      "सकाळी 9:30",
+      "सकाळी 10:30",
+      "सकाळी 11:30",
+      "दुपारी 12:30"
+    ],
+    "distance_km": "212",
+    "bus_type": "शिवाई"
+  },
+  {
+    "destination": "पुण्या",
+    "times": [
+      "सकाळी 4:00 AM",
+      "5:00 AM",
+      "7:00 AM",
+      "9:00 AM",
+      "4:00 PM",
+      "5:00 PM",
+      "6:00 PM",
+      "7:00 PM",
+      "8:00 PM",
+      "10:00 पीएम"
+    ],
+    "distance_km": "212",
+    "bus_type": "जानशिवनेरी"
+  },
+  {
+    "destination": "हिंजवडी",
+    "times": [
+      "सकाळी 4:00"
+    ],
+    "distance_km": "२४८",
+    "bus_type": "शिवशाही"
+  },
+  {
+    "destination": "स्वारगेट",
+    "times": [
+      "सकाळी 4:00",
+      "सकाळी 4:30",
+      "सकाळी 5:00",
+      "सकाळी 6:00",
+      "सकाळी 8:00",
+      "सकाळी 9:00",
+      "सकाळी 10:00",
+      "सकाळी 11:00",
+      "दुपारी 12:00",
+      "दुपारी 1:30 PM",
+      "दुपारी 3:30 PM",
+      "5:00 PM"
+    ],
+    "distance_km": "218",
+    "bus_type": "शिवशाही"
+  },
+  {
+    "destination": "धुळ्या",
+    "times": [
+      "सकाळी 5:30",
+      "सकाळी 6:00",
+      "सकाळी 6:30",
+      "सकाळी 7:00",
+      "सकाळी 7:30",
+      "सकाळी 8:00",
+      "सकाळी 8:30",
+      "सकाळी 9:00",
+      "दुपारी 1:30",
+      "2:00 PM",
+      "2:30 PM",
+      "3:00 PM",
+      "3:30 PM",
+      "4:00 PM",
+      "4:30 PM",
+      "5:00 PM"
+    ],
+    "distance_km": "१५९",
+    "bus_type": "लालपरी"
+  },
+  {
+    "destination": "लोनखेडी",
+    "times": [
+      "दुपारी २:३०"
+    ],
+    "distance_km": "१५२",
+    "bus_type": "लालपरी"
+  },
+  {
+    "destination": "पाचोरा",
+    "times": [
+      "सकाळी ७:००"
+    ],
+    "distance_km": "220",
+    "bus_type": "लालपरी"
+  },
+  {
+    "destination": "शिवणगाव",
+    "times": [
+      "5:30 AM",
+      "7:30 AM",
+      "9:30 AM",
+      "1:00 PM 1:10 PM",
+      "3:00 PM",
+      "5:00 PM"
+    ],
+    "distance_km": "26  बसचा",
+    "bus_type": null
+  },
+  {
+    "destination": "त्र्यंबकेश्वर",
+    "times": [
+      "5:30 AM",
+      "6:00 AM",
+      "6:40 AM",
+      "7:30 AM",
+      "8:30 AM",
+      "8:40 AM",
+      "1:15 PM",
+      "2:00 PM",
+      "2:20 PM",
+      "3:10 PM",
+      "दुपारी 3:15 PM",
+      "4:20 PM"
+    ],
+    "distance_km": "२८",
+    "bus_type": "लालपरी"
+  },
+  {
+    "destination": "त्र्यंबकेश्वर",
+    "times": [
+      "7:20 PM"
+    ],
+    "distance_km": "२८",
+    "bus_type": "हिरकणी"
+  },
+  {
+    "destination": "कसारा",
+    "times": [
+      "सकाळी ९:४५",
+      "दुपारी ३:१५"
+    ],
+    "distance_km": "६४",
+    "bus_type": "लालपरी"
+  },
+  {
+    "destination": "कसारा",
+    "times": [
+      "11:15 AM",
+      "3:30 PM"
+    ],
+    "distance_km": "६४",
+    "bus_type": "हिरकणी"
+  },
+  {
+    "destination": "शिर्डी",
+    "times": [
+      "6:45 PM"
+    ],
+    "distance_km": "९०",
+    "bus_type": "लालपरी"
+  },
+  {
+    "destination": "हर्सूल",
+    "times": [
+      "सकाळी ७:१५",
+      "दुपारी २:३०"
+    ],
+    "distance_km": "५१",
+    "bus_type": "लालपरी"
+  },
+  {
+    "destination": "SANGAMNER",
+    "times": [
+      "6:00 AM",
+      "8:00 AM",
+      "10:00 AM",
+      "12:00 PM",
+      "2:00 PM",
+      "4:00 PM",
+      "6:00 PM"
+    ],
+    "distance_km": "70",
+    "bus_type": "Ordinary"
+  }
+]

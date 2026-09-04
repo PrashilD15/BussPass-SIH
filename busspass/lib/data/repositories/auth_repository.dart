@@ -39,11 +39,6 @@ class AuthRepository {
         googleUser = await GoogleSignIn.instance.authenticate();
       }
 
-      if (googleUser == null) {
-        debugPrint('⚠️ [AuthRepo] User cancelled Google Sign-In.');
-        return null;
-      }
-
       debugPrint('🔐 [AuthRepo] Got Google account: ${googleUser.email}');
 
       // In v7, authentication is a synchronous getter returning idToken only

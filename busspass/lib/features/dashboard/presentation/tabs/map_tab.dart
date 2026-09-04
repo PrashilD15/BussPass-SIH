@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:busspass/data/providers/map_provider.dart';
-import 'package:busspass/data/models/bus_models.dart';
+import 'package:busspass/data/models/network_models.dart';
 import 'package:busspass/features/journey/presentation/journey_search_screen.dart';
 import 'package:busspass/theme/app_colors.dart';
 import 'package:busspass/theme/app_theme.dart';
@@ -17,7 +17,7 @@ class MapTab extends ConsumerStatefulWidget {
 
 class _MapTabState extends ConsumerState<MapTab> {
   GoogleMapController? _mapController;
-  BusStop? _selectedStop;
+  NetworkStop? _selectedStop;
 
   static const CameraPosition _defaultCamera = CameraPosition(
     target: LatLng(18.5204, 73.8567),
@@ -46,33 +46,39 @@ class _MapTabState extends ConsumerState<MapTab> {
     super.dispose();
   }
 
+
+
   @override
   Widget build(BuildContext context) {
-    final markersAsync = ref.watch(busStopMarkersProvider);
+    final markersAsync = ref.watch(busStopTargetsProvider);
 
     return Scaffold(
       body: Stack(
         children: [
-          markersAsync.when(
-            data: (markers) => GoogleMap(
-              onMapCreated: _onMapCreated,
-              initialCameraPosition: _defaultCamera,
-              myLocationEnabled: true,
-              myLocationButtonEnabled: false,
-              zoomControlsEnabled: false,
-              mapType: MapType.normal,
-              markers: markers,
-              onTap: (_) => setState(() => _selectedStop = null),
-            ),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => GoogleMap(
-              onMapCreated: _onMapCreated,
-              initialCameraPosition: _defaultCamera,
-              myLocationEnabled: true,
-              myLocationButtonEnabled: false,
-              zoomControlsEnabled: false,
-            ),
+          GoogleMap(
+            onMapCreated: _onMapCreated,
+            initialCameraPosition: _defaultCamera,
+            myLocationEnabled: true,
+            myLocationButtonEnabled: false,
+            zoomControlsEnabled: false,
+            mapType: MapType.normal,
+            markers: markersAsync.hasValue
+                ? {
+                    for (final target in markersAsync.value!)
+                      target.marker.copyWith(
+                        consumeTapEventsParam: true,
+                        onTapParam: () =>
+                            setState(() => _selectedStop = target.stop),
+                      ),
+                  }
+                : {},
+            onTap: (_) => setState(() => _selectedStop = null),
+            onCameraMove: (position) {
+              ref.read(currentMapZoomProvider.notifier).setZoom(position.zoom);
+            },
           ),
+          if (markersAsync.isLoading && !markersAsync.hasValue)
+            const Center(child: CircularProgressIndicator()),
 
           // ── My Location FAB ──────────────────────────────────────
           Positioned(
@@ -154,7 +160,7 @@ class _MapFab extends StatelessWidget {
 }
 
 class _StopBottomSheet extends StatelessWidget {
-  final BusStop stop;
+  final NetworkStop stop;
   final VoidCallback onClose;
 
   const _StopBottomSheet({required this.stop, required this.onClose});

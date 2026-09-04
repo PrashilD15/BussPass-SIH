@@ -1,34 +1,65 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:busspass/data/models/bus_models.dart';
+import 'package:busspass/core/math/journey_planner.dart';
+import 'package:busspass/core/math/schedule.dart';
+import 'package:busspass/data/providers/directions_provider.dart';
+import 'package:busspass/core/theme/map_style.dart';
 import 'package:busspass/theme/app_colors.dart';
 import 'package:busspass/theme/app_theme.dart';
 
-class LiveNavigationScreen extends StatefulWidget {
-  final BusStop destination;
+/// Live map tracking for the currently-travelled leg of an itinerary.
+class LiveNavigationScreen extends ConsumerStatefulWidget {
+  final Itinerary itinerary;
+  final int legIndex;
 
-  const LiveNavigationScreen({super.key, required this.destination});
+  const LiveNavigationScreen({
+    super.key,
+    required this.itinerary,
+    required this.legIndex,
+  });
 
   @override
-  State<LiveNavigationScreen> createState() =>
+  ConsumerState<LiveNavigationScreen> createState() =>
       _LiveNavigationScreenState();
 }
 
-class _LiveNavigationScreenState extends State<LiveNavigationScreen> {
-  final LatLng _mockCurrentLoc =
-      const LatLng(18.5300, 73.8500);
-  late LatLng _mockDest;
+class _LiveNavigationScreenState extends ConsumerState<LiveNavigationScreen> {
   bool _isAlarmOn = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _mockDest = LatLng(widget.destination.lat, widget.destination.lng);
+  JourneyLeg get _leg => widget.itinerary.legs[widget.legIndex];
+
+  /// The leg geometry as a stable, cacheable [TransLegRef] key.
+  TransLegRef get _legRef {
+    final leg = _leg;
+    final via = leg.intermediateStops
+        .map((s) => LatLng(s.lat, s.lng))
+        .toList(growable: false);
+    return TransLegRef(
+      origin: LatLng(leg.boardStop.lat, leg.boardStop.lng),
+      via: via,
+      destination: LatLng(leg.alightStop.lat, leg.alightStop.lng),
+    );
   }
+
+  List<LatLng> get _straightPoints => _legRef.points;
+
+  /// The road-snapped polyline, falling back to the straight stop chain.
+  List<LatLng> _points(List<LatLng>? road) =>
+      (road?.isNotEmpty ?? false) ? road! : _straightPoints;
 
   @override
   Widget build(BuildContext context) {
+    final leg = _leg;
+    final road = ref.watch(legRoadPolylineViewProvider(_legRef));
+    final points = _points(road);
+
+    final alightName = leg.alightStop.name.isEmpty
+        ? leg.alightStop.city
+        : leg.alightStop.name;
+    final nextStopName = _nextStopName();
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: Stack(
@@ -36,24 +67,36 @@ class _LiveNavigationScreenState extends State<LiveNavigationScreen> {
           // ── Live Map ──────────────────────────────────────────
           GoogleMap(
             initialCameraPosition: CameraPosition(
-              target: _mockCurrentLoc,
+              target: points.last,
               zoom: 14,
             ),
+            style: kModernMapStyleJson,
             zoomControlsEnabled: false,
             myLocationEnabled: true,
             myLocationButtonEnabled: false,
+            compassEnabled: false,
+            mapToolbarEnabled: false,
             polylines: {
               Polyline(
+                polylineId: const PolylineId('route-sheen'),
+                points: points,
+                color: Colors.white.withValues(alpha: 0.65),
+                width: 9,
+                jointType: JointType.round,
+              ),
+              Polyline(
                 polylineId: const PolylineId('route'),
-                points: [_mockCurrentLoc, _mockDest],
+                points: points,
                 color: AppColors.brand,
                 width: 5,
-              )
+                jointType: JointType.round,
+              ),
             },
             markers: {
+              ..._viaMarkers(),
               Marker(
                 markerId: const MarkerId('dest'),
-                position: _mockDest,
+                position: points.last,
                 icon: BitmapDescriptor.defaultMarkerWithHue(
                     BitmapDescriptor.hueGreen),
               ),
@@ -140,18 +183,16 @@ class _LiveNavigationScreenState extends State<LiveNavigationScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Origin',
-                        style:
-                            Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  fontSize: 12,
-                                ),
+                        leg.boardStop.city,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontSize: 12,
+                            ),
                       ),
                       Text(
-                        widget.destination.city,
-                        style:
-                            Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  fontSize: 12,
-                                ),
+                        leg.alightStop.city,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontSize: 12,
+                            ),
                       ),
                     ],
                   ),
@@ -170,7 +211,7 @@ class _LiveNavigationScreenState extends State<LiveNavigationScreen> {
 
                   // ── Next Stop ──────────────────────────────────
                   Text(
-                    'NEXT STOP IN 4 MINS',
+                    'NEXT STOP',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -180,15 +221,13 @@ class _LiveNavigationScreenState extends State<LiveNavigationScreen> {
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    'Lonavala Toll Plaza',
-                    style:
-                        Theme.of(context).textTheme.headlineMedium?.copyWith(
-                              fontSize: 24,
-                            ),
+                    nextStopName,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontSize: 24,
+                        ),
                   ),
 
-                  const Divider(
-                      height: 40, color: AppColors.hairline),
+                  const Divider(height: 40, color: AppColors.hairline),
 
                   // ── Destination Info & Alarm ────────────────────
                   Row(
@@ -211,7 +250,7 @@ class _LiveNavigationScreenState extends State<LiveNavigationScreen> {
                             ),
                             const SizedBox(height: AppSpacing.xs),
                             Text(
-                              widget.destination.name,
+                              alightName,
                               style: Theme.of(context)
                                   .textTheme
                                   .labelLarge
@@ -221,7 +260,7 @@ class _LiveNavigationScreenState extends State<LiveNavigationScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'ETA: 11:10 AM',
+                              'ETA: ${Schedule.formatClock(Schedule.minuteOfDay(leg.arrivesAt))}',
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium
@@ -299,6 +338,32 @@ class _LiveNavigationScreenState extends State<LiveNavigationScreen> {
         ],
       ),
     );
+  }
+
+  /// Orange markers for intermediate stops passed between board and alight.
+  Set<Marker> _viaMarkers() {
+    final leg = _leg;
+    final stops = leg.intermediateStops;
+    if (stops.isEmpty) return const {};
+    return stops
+        .map((s) => Marker(
+              markerId: MarkerId('via-${leg.route.id}-${s.stopId}'),
+              position: LatLng(s.lat, s.lng),
+              icon: BitmapDescriptor.defaultMarkerWithHue(
+                  BitmapDescriptor.hueOrange),
+            ))
+        .toSet();
+  }
+
+  String _nextStopName() {
+    final leg = _leg;
+    if (leg.intermediateStops.isNotEmpty) {
+      final s = leg.intermediateStops.first;
+      return s.name.isEmpty ? s.city : s.name;
+    }
+    return leg.alightStop.name.isEmpty
+        ? leg.alightStop.city
+        : leg.alightStop.name;
   }
 }
 
