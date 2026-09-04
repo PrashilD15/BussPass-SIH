@@ -337,7 +337,7 @@ SIH-BussPass/
 
 ```mermaid
 flowchart LR
-    A[scripts/msrtc_data.js\n91 Stands · 273 Routes (MSRTC — extendable to other states)\nWaypoints · Fare Model] --> C
+    A["scripts/msrtc_data.js\n91 Stands, 273 Routes\nWaypoints + Fare Model"] --> C
     B[master_timetables.json\n988 Timetable Rows] --> C
 
     C[scripts/build_dataset.js] --> C1[Resolve via-stop\nGPS coordinates]
@@ -345,7 +345,7 @@ flowchart LR
     C --> C3[Synthesize headway-based\ndeparture schedules]
     C --> C4[Validate geometry\nreject implausible pairs]
 
-    C1 & C2 & C3 & C4 --> D[busspass/assets/data/network.json\n91 stops · 273 routes · 602 services · 5494 departures · 439 KB]
+    C1 & C2 & C3 & C4 --> D["busspass/assets/data/network.json\n91 stops, 273 routes, 602 services\n5494 departures, 439 KB"]
 
     D --> E[NetworkRepository\nLoaded at app startup\nCached in memory]
     D --> F[JourneyPlanner\nDijkstra over TransitGraph]
