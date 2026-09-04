@@ -4,5 +4,19 @@
     "subtitle": "बस यात्राओं को ट्रैक करने और योजना बनाने के लिए आपका स्मार्ट साथी।",
     "select_language": "अपनी पसंदीदा भाषा चुनें",
     "continue_btn": "आगे बढ़ें"
+  },
+  "home": {
+    "greeting_morning": "सुप्रभात,",
+    "greeting_afternoon": "शुभ दोपहर,",
+    "greeting_evening": "शुभ संध्या,",
+    "search_title": "कहाँ जाना है?",
+    "search_subtitle": "स्टॉप, रूट या शहर खोजें",
+    "quick_actions": "त्वरित क्रियाएँ",
+    "live_map": "लाइव मैप",
+    "timetables": "समय सारिणी",
+    "buy_pass": "पास खरीदें",
+    "my_passes": "मेरे पास",
+    "your_journeys": "आपकी यात्रा",
+    "select_language": "भाषा चुनें"
   }
 }

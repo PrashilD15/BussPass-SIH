@@ -4,5 +4,19 @@
     "subtitle": "ಬಸ್ ಪ್ರಯಾಣವನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಲು ಮತ್ತು ಯೋಜಿಸಲು ನಿಮ್ಮ ಸ್ಮಾರ್ಟ್ ಒಡನಾಡಿ.",
     "select_language": "ನಿಮ್ಮ ಆದ್ಯತೆಯ ಭಾಷೆಯನ್ನು ಆರಿಸಿ",
     "continue_btn": "ಮುಂದುವರಿಸಿ"
+  },
+  "home": {
+    "greeting_morning": "ಶುಭೋದಯ,",
+    "greeting_afternoon": "ಶುಭ ಮಧ್ಯಾಹ್ನ,",
+    "greeting_evening": "ಶುಭ ಸಂಜೆ,",
+    "search_title": "ಎಲ್ಲಿಗೆ ಹೋಗಬೇಕು?",
+    "search_subtitle": "ನಿಲ್ದಾಣಗಳು, ಮಾರ್ಗಗಳು ಅಥವಾ ನಗರಗಳನ್ನು ಹುಡುಕಿ",
+    "quick_actions": "ತ್ವರಿತ ಕ್ರಿಯೆಗಳು",
+    "live_map": "ಲೈವ್ ನಕ್ಷೆ",
+    "timetables": "ವೇಳಾಪಟ್ಟಿ",
+    "buy_pass": "ಪಾಸ್ ಖರೀದಿಸಿ",
+    "my_passes": "ನನ್ನ ಪಾಸ್‌ಗಳು",
+    "your_journeys": "ನಿಮ್ಮ ಪ್ರಯಾಣಗಳು",
+    "select_language": "ಭಾಷೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ"
   }
 }

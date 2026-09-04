@@ -63,10 +63,15 @@ class HomeTab extends ConsumerWidget {
                             shape: BoxShape.circle,
                             border: Border.all(color: AppColors.hairline),
                           ),
-                          child: const Icon(
-                            Icons.language_outlined,
-                            color: AppColors.inkSoft,
-                            size: 22,
+                          child: const Center(
+                            child: Text(
+                              'A/अ',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.inkSoft,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -101,7 +106,7 @@ class HomeTab extends ConsumerWidget {
 
               // ── Quick Actions ──────────────────────────────────────────
               SectionHeader(
-                title: 'Quick Actions',
+                title: 'home.quick_actions'.tr(),
                 actionLabel: 'All',
                 onAction: () {},
               ).animate().fadeIn(delay: 200.ms),
@@ -111,22 +116,22 @@ class HomeTab extends ConsumerWidget {
                 children: [
                   _QuickAction(
                     icon: Icons.map_outlined,
-                    label: 'Live Map',
+                    label: 'home.live_map'.tr(),
                     onTap: onNavigateToMap,
                   ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.08),
                   _QuickAction(
                     icon: Icons.schedule_outlined,
-                    label: 'Timetables',
+                    label: 'home.timetables'.tr(),
                     onTap: () => _openTimetables(context),
                   ).animate().fadeIn(delay: 380.ms).slideY(begin: 0.08),
                   _QuickAction(
-                    icon: Icons.qr_code_scanner_outlined,
-                    label: 'Scan QR',
+                    icon: Icons.confirmation_number_outlined,
+                    label: 'home.buy_pass'.tr(),
                     onTap: () {},
                   ).animate().fadeIn(delay: 460.ms).slideY(begin: 0.08),
                   _QuickAction(
-                    icon: Icons.headset_mic_outlined,
-                    label: 'Help',
+                    icon: Icons.wallet_outlined,
+                    label: 'home.my_passes'.tr(),
                     onTap: () {},
                   ).animate().fadeIn(delay: 540.ms).slideY(begin: 0.08),
                 ],
@@ -136,7 +141,7 @@ class HomeTab extends ConsumerWidget {
 
               // ── Active Journey ───────────────────────────────────────
               SectionHeader(
-                title: 'Active Journey',
+                title: 'home.your_journeys'.tr(),
                 actionLabel: null,
               ).animate().fadeIn(delay: 600.ms),
               const SizedBox(height: AppSpacing.lg),
@@ -234,9 +239,9 @@ class HomeTab extends ConsumerWidget {
 
   String _greeting() {
     final h = DateTime.now().hour;
-    if (h < 12) return 'Good morning,';
-    if (h < 17) return 'Good afternoon,';
-    return 'Good evening,';
+    if (h < 12) return 'home.greeting_morning'.tr();
+    if (h < 17) return 'home.greeting_afternoon'.tr();
+    return 'home.greeting_evening'.tr();
   }
 
   void _showLanguagePicker(BuildContext context) {
@@ -247,18 +252,20 @@ class HomeTab extends ConsumerWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.radiusLg)),
       ),
       builder: (context) {
+        final currentLocale = context.locale.languageCode;
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(height: AppSpacing.lg),
               Text(
-                'Select Language',
+                'home.select_language'.tr(),
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: AppSpacing.md),
               ListTile(
                 title: const Text('English'),
+                trailing: currentLocale == 'en' ? const Icon(Icons.check, color: AppColors.primary) : null,
                 onTap: () {
                   context.setLocale(const Locale('en'));
                   Navigator.pop(context);
@@ -266,6 +273,7 @@ class HomeTab extends ConsumerWidget {
               ),
               ListTile(
                 title: const Text('मराठी (Marathi)'),
+                trailing: currentLocale == 'mr' ? const Icon(Icons.check, color: AppColors.primary) : null,
                 onTap: () {
                   context.setLocale(const Locale('mr'));
                   Navigator.pop(context);
@@ -273,6 +281,7 @@ class HomeTab extends ConsumerWidget {
               ),
               ListTile(
                 title: const Text('हिंदी (Hindi)'),
+                trailing: currentLocale == 'hi' ? const Icon(Icons.check, color: AppColors.primary) : null,
                 onTap: () {
                   context.setLocale(const Locale('hi'));
                   Navigator.pop(context);
@@ -280,6 +289,7 @@ class HomeTab extends ConsumerWidget {
               ),
               ListTile(
                 title: const Text('ಕನ್ನಡ (Kannada)'),
+                trailing: currentLocale == 'kn' ? const Icon(Icons.check, color: AppColors.primary) : null,
                 onTap: () {
                   context.setLocale(const Locale('kn'));
                   Navigator.pop(context);
@@ -318,9 +328,9 @@ class _SearchBanner extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Where to?',
-                    style: TextStyle(
+                  Text(
+                    'home.search_title'.tr(),
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
@@ -328,7 +338,7 @@ class _SearchBanner extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Search stops, routes, or cities',
+                    'home.search_subtitle'.tr(),
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.white.withValues(alpha: 0.6),

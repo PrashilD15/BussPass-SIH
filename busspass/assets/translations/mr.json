@@ -4,5 +4,19 @@
     "subtitle": "बस प्रवासाचा मागोवा घेण्यासाठी आणि नियोजन करण्यासाठी तुमचा स्मार्ट साथीदार.",
     "select_language": "तुमची पसंतीची भाषा निवडा",
     "continue_btn": "पुढे जा"
+  },
+  "home": {
+    "greeting_morning": "शुभ सकाळ,",
+    "greeting_afternoon": "शुभ दुपार,",
+    "greeting_evening": "शुभ संध्याकाळ,",
+    "search_title": "कुठे जायचे आहे?",
+    "search_subtitle": "थांबे, मार्ग किंवा शहरे शोधा",
+    "quick_actions": "जलद कृती",
+    "live_map": "थेट नकाशा",
+    "timetables": "वेळापत्रक",
+    "buy_pass": "पास खरेदी करा",
+    "my_passes": "माझे पास",
+    "your_journeys": "तुमचे प्रवास",
+    "select_language": "भाषा निवडा"
   }
 }

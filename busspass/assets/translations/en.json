@@ -4,5 +4,19 @@
     "subtitle": "Your smart transit companion for tracking and planning bus journeys.",
     "select_language": "Choose your preferred language",
     "continue_btn": "Continue"
+  },
+  "home": {
+    "greeting_morning": "Good morning,",
+    "greeting_afternoon": "Good afternoon,",
+    "greeting_evening": "Good evening,",
+    "search_title": "Where to?",
+    "search_subtitle": "Search stops, routes, or cities",
+    "quick_actions": "Quick Actions",
+    "live_map": "Live Map",
+    "timetables": "Timetables",
+    "buy_pass": "Buy Pass",
+    "my_passes": "My Passes",
+    "your_journeys": "Your Journeys",
+    "select_language": "Select Language"
   }
 }
