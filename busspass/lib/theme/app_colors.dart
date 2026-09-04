@@ -5,16 +5,13 @@
 /// literal colour, which is what makes a genuine dark mode possible rather than
 /// an inverted approximation.
 ///
-/// Four layers:
-///  - `ink`     — text and structure, from strongest to faintest
-///  - `brand`   — a civic emerald-teal used for identity and primary action
-///  - `paper`   — warm, low-blue neutrals so the UI reads as printed, not plastic
-///  - `signal`  — status colours: fare accent, success, warning, danger, info
+/// LIGHT — "Saffron Dawn"
+///   Warm sandy parchment canvas, petrol-teal brand, saffron-gold accent.
+///   Inspired by Indian morning light — warm, natural, never clinical.
 ///
-/// The dark palette is not the light one inverted. Dark surfaces are lifted with
-/// a green-shifted charcoal so the brand still belongs, brand colours are
-/// desaturated and brightened to hold contrast on dark, and the accent is warmed
-/// further because saturated amber reads harsher on black.
+/// DARK — "Midnight Indigo"
+///   Deep indigo-slate surfaces (not flat black), luminous aqua-mint brand,
+///   warm amber accent. Easy on the eyes during night-time journeys.
 library;
 
 import 'package:flutter/material.dart';
@@ -130,70 +127,78 @@ class AppPalette extends ThemeExtension<AppPalette> {
     required this.liveBus,
   });
 
-  /// Light palette — warm paper, deep ink, emerald brand.
+  // ─────────────────────────────────────────────────────────────────────────
+  // LIGHT — "Saffron Dawn"
+  // Canvas:  warm sandy parchment  (HSL 40°  20%  95%)
+  // Brand:   petrol teal           (HSL 176° 67%  32%)  — calm deep river
+  // Accent:  saffron gold          (HSL 37°  72%  46%)  — warm pop, not loud
+  // Ink:     warm charcoal         (HSL 225° 22%  16%)  — no cold blue-black
+  // ─────────────────────────────────────────────────────────────────────────
   static const AppPalette light = AppPalette(
-    ink: Color(0xFF11151C),
-    inkSoft: Color(0xFF3A424E),
-    inkMuted: Color(0xFF6B7280),
-    inkFaint: Color(0xFF9CA3AF),
-    brand: Color(0xFF0E6B5C),
-    brandDeep: Color(0xFF0A4E43),
-    brandLight: Color(0xFFDFF0EA),
-    onBrand: Color(0xFFFFFFFF),
-    canvas: Color(0xFFF6F5F1),
-    surface: Color(0xFFFFFFFF),
-    surfaceAlt: Color(0xFFFBFAF7),
-    surfaceRaised: Color(0xFFFFFFFF),
-    hairline: Color(0xFFE7E4DC),
-    hairlineStrong: Color(0xFFD3CFC4),
-    accent: Color(0xFFB4741A),
-    accentLight: Color(0xFFFDF2DF),
-    success: Color(0xFF1B7A54),
-    successLight: Color(0xFFE2F3EB),
-    warning: Color(0xFF9A6212),
-    warningLight: Color(0xFFFCF0DA),
-    danger: Color(0xFFB03A24),
-    dangerLight: Color(0xFFFBE9E5),
-    info: Color(0xFF2A5D8F),
-    infoLight: Color(0xFFE6EFF8),
-    routeLine: Color(0xFF0E6B5C),
-    routeTravelled: Color(0xFF9CA3AF),
-    liveBus: Color(0xFFB4741A),
+    ink:       Color(0xFF1E2433),
+    inkSoft:   Color(0xFF485068),
+    inkMuted:  Color(0xFF7C8399),
+    inkFaint:  Color(0xFFB0B6C8),
+    brand:      Color(0xFF1B8A80),
+    brandDeep:  Color(0xFF136B62),
+    brandLight: Color(0xFFD4EFEC),
+    onBrand:    Color(0xFFFFFFFF),
+    canvas:       Color(0xFFF5F3EE),
+    surface:      Color(0xFFFEFCF8),
+    surfaceAlt:   Color(0xFFF0EDE5),
+    surfaceRaised:Color(0xFFFFFDF9),
+    hairline:      Color(0xFFE2DDD3),
+    hairlineStrong:Color(0xFFCBC5B8),
+    accent:      Color(0xFFCA8A24),
+    accentLight: Color(0xFFFFF1D6),
+    success:      Color(0xFF287D5E),
+    successLight: Color(0xFFDBF2EA),
+    warning:      Color(0xFFB07320),
+    warningLight: Color(0xFFFFF0D4),
+    danger:       Color(0xFFC0402A),
+    dangerLight:  Color(0xFFFFEAE5),
+    info:         Color(0xFF3568A8),
+    infoLight:    Color(0xFFDDE9F8),
+    routeLine:      Color(0xFF1B8A80),
+    routeTravelled: Color(0xFFB0B6C8),
+    liveBus:        Color(0xFFCA8A24),
   );
 
-  /// Dark palette — green-shifted charcoal, brightened brand.
-  ///
-  /// Brand colours are lifted and desaturated: `#0E6B5C` on a near-black
-  /// surface fails contrast for text, so the dark brand is `#4FBFA5`, which
-  /// clears 4.5:1 against every dark surface here.
+  // ─────────────────────────────────────────────────────────────────────────
+  // DARK — "Midnight Indigo"
+  // Canvas:  deep indigo-slate     (HSL 228° 23%  10%)  — not flat black
+  // Brand:   luminous aqua-mint    (HSL 175° 54%  51%)  — glows without neon
+  // Accent:  soft amber gold       (HSL 38°  80%  57%)  — warm, easy on eyes
+  // Ink:     cool lavender-white   (HSL 228° 28%  93%)  — no harsh contrast
+  // ─────────────────────────────────────────────────────────────────────────
   static const AppPalette dark = AppPalette(
-    ink: Color(0xFFF2F4F3),
-    inkSoft: Color(0xFFC3CAC8),
-    inkMuted: Color(0xFF929B99),
-    inkFaint: Color(0xFF6B7472),
-    brand: Color(0xFF4FBFA5),
-    brandDeep: Color(0xFF6FD3BA),
-    brandLight: Color(0xFF15332E),
-    onBrand: Color(0xFF05201B),
-    canvas: Color(0xFF0D1211),
-    surface: Color(0xFF161C1B),
-    surfaceAlt: Color(0xFF1D2423),
-    surfaceRaised: Color(0xFF222A28),
-    hairline: Color(0xFF2B3432),
-    hairlineStrong: Color(0xFF3C4644),
-    accent: Color(0xFFE8B563),
-    accentLight: Color(0xFF33270F),
-    success: Color(0xFF56C793),
-    successLight: Color(0xFF11301F),
-    warning: Color(0xFFE0AE5C),
-    warningLight: Color(0xFF31250F),
-    danger: Color(0xFFE8806A),
-    dangerLight: Color(0xFF361A14),
-    info: Color(0xFF7FB2E0),
-    infoLight: Color(0xFF122435),
-    routeLine: Color(0xFF4FBFA5),
-    routeTravelled: Color(0xFF4A5453),
-    liveBus: Color(0xFFE8B563),
+    ink:       Color(0xFFE6E8F2),
+    inkSoft:   Color(0xFFADB3CC),
+    inkMuted:  Color(0xFF787F9A),
+    inkFaint:  Color(0xFF4C526E),
+    brand:      Color(0xFF40C4B8),
+    brandDeep:  Color(0xFF5DD8CC),
+    brandLight: Color(0xFF0D2E2C),
+    onBrand:    Color(0xFF051918),
+    canvas:       Color(0xFF10121A),
+    surface:      Color(0xFF181C28),
+    surfaceAlt:   Color(0xFF1D2235),
+    surfaceRaised:Color(0xFF23293E),
+    hairline:      Color(0xFF282E45),
+    hairlineStrong:Color(0xFF3A4266),
+    accent:      Color(0xFFE8A83A),
+    accentLight: Color(0xFF2C1E02),
+    success:      Color(0xFF4DC898),
+    successLight: Color(0xFF092214),
+    warning:      Color(0xFFE8A83A),
+    warningLight: Color(0xFF281A02),
+    danger:       Color(0xFFEA7B6A),
+    dangerLight:  Color(0xFF2A0C08),
+    info:         Color(0xFF82AEED),
+    infoLight:    Color(0xFF0B182E),
+    routeLine:      Color(0xFF40C4B8),
+    routeTravelled: Color(0xFF4C526E),
+    liveBus:        Color(0xFFE8A83A),
   );
 
   /// A translucent black scrim, for overlays on imagery and maps.
@@ -328,18 +333,18 @@ extension PaletteAccess on BuildContext {
 class AppColors {
   AppColors._();
 
-  static const Color ink = Color(0xFF11151C);
-  static const Color inkSoft = Color(0xFF3A424E);
-  static const Color inkMuted = Color(0xFF6B7280);
-  static const Color brand = Color(0xFF0E6B5C);
-  static const Color brandDeep = Color(0xFF0A4E43);
-  static const Color brandLight = Color(0xFFDFF0EA);
-  static const Color canvas = Color(0xFFF6F5F1);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceAlt = Color(0xFFFBFAF7);
-  static const Color hairline = Color(0xFFE7E4DC);
-  static const Color accent = Color(0xFFB4741A);
-  static const Color danger = Color(0xFFB03A24);
+  static const Color ink        = Color(0xFF1E2433);
+  static const Color inkSoft    = Color(0xFF485068);
+  static const Color inkMuted   = Color(0xFF7C8399);
+  static const Color brand      = Color(0xFF1B8A80);
+  static const Color brandDeep  = Color(0xFF136B62);
+  static const Color brandLight = Color(0xFFD4EFEC);
+  static const Color canvas     = Color(0xFFF5F3EE);
+  static const Color surface    = Color(0xFFFEFCF8);
+  static const Color surfaceAlt = Color(0xFFF0EDE5);
+  static const Color hairline   = Color(0xFFE2DDD3);
+  static const Color accent     = Color(0xFFCA8A24);
+  static const Color danger     = Color(0xFFC0402A);
 
   static Color onBrand() => Colors.white;
   static Color scrim(double opacity) => Colors.black.withValues(alpha: opacity);
