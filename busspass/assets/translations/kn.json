@@ -1,9 +1,10 @@
 {
   "onboarding": {
     "title": "BussPass ಗೆ ಸುಸ್ವಾಗತ",
-    "subtitle": "ಬಸ್ ಪ್ರಯಾಣವನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಲು ಮತ್ತು ಯೋಜಿಸಲು ನಿಮ್ಮ ಸ್ಮಾರ್ಟ್ ಒಡನಾಡಿ.",
+    "subtitle": "ನಿಮ್ಮ ಪ್ರಯಾಣ ಸಂಗಾತಿ",
     "select_language": "ನಿಮ್ಮ ಆದ್ಯತೆಯ ಭಾಷೆಯನ್ನು ಆರಿಸಿ",
-    "continue_btn": "ಮುಂದುವರಿಸಿ"
+    "continue_btn": "ಮುಂದುವರಿಸಿ",
+    "tagline": "BussPass – ನಿಮ್ಮ ಪ್ರಯಾಣ ಸಂಗಾತಿ"
   },
   "home": {
     "greeting_morning": "ಶುಭೋದಯ,",

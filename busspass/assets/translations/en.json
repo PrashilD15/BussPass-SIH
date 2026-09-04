@@ -1,9 +1,10 @@
 {
   "onboarding": {
     "title": "Welcome to BussPass",
-    "subtitle": "Your smart transit companion for tracking and planning bus journeys.",
+    "subtitle": "Your Travel Partner",
     "select_language": "Choose your preferred language",
-    "continue_btn": "Continue"
+    "continue_btn": "Continue",
+    "tagline": "BussPass – Your Travel Partner"
   },
   "home": {
     "greeting_morning": "Good morning,",

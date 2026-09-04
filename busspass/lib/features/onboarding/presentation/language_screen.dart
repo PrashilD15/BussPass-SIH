@@ -74,7 +74,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
                     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.15),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      "India's state bus passes, simplified.",
+                      'Your Travel Partner',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.15),
                   ],
