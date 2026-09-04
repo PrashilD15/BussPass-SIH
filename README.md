@@ -4,7 +4,7 @@
 
 <h1>BussPass — Your Travel Partner</h1>
 
-<p><strong>Smart journey planning, real-time tracking, and digital passes for MSRTC bus commuters across Maharashtra.</strong></p>
+<p><strong>Smart journey planning, real-time tracking, and digital passes for India's state road transport corporations — built to scale across every state.</strong></p>
 
 <p>
   <img src="https://img.shields.io/badge/Flutter-3.24-02569B?style=flat-square&logo=flutter&logoColor=white" />
@@ -48,7 +48,7 @@
 
 ## Problem Statement
 
-Millions of MSRTC commuters across Maharashtra face these challenges every day:
+Millions of bus commuters across India face these challenges every day:
 
 | Pain Point | Impact |
 |---|---|
@@ -63,11 +63,11 @@ Millions of MSRTC commuters across Maharashtra face these challenges every day:
 
 ## Solution Overview
 
-BussPass digitizes the entire MSRTC commuter experience as a mobile-first Android application:
+BussPass digitizes the state bus commuter experience as a mobile-first Android application:
 
-- Search routes between any two stops across the full MSRTC network
+- Search routes between any two stops across the full state transport network
 - Compute the optimal journey path using a time-dependent Dijkstra algorithm — accounting for transfers, bus type, fare, and total travel time
-- Display accurate MSRTC-official stage-based fares for every leg and every bus class
+- Display accurate official stage-based fares (MSRTC, KSRTC, GSRTC, etc.) for every leg and every bus class
 - Work completely offline via a bundled `network.json` dataset pre-built from verified MSRTC timetable data
 - Show a live map of nearby bus stands and active buses
 - Switch between English, Marathi, Hindi, and Kannada with a single tap
@@ -145,22 +145,22 @@ flowchart TD
 
 ### Journey Planning
 
-- Multi-leg journey planning across the entire MSRTC network
+- Multi-leg journey planning across the entire state transport network
 - Transfers supported at major interchange stops (Nashik CBS, Pune Station, Mumbai Central, etc.)
 - Preference-based sorting — fastest, cheapest, or fewest changes
 - Guaranteed diversity in results — always shows a direct option when one exists
-- All bus types shown: Ordinary, Hirkani, Shivshahi, Shivneri, E-Shivneri, E-Shiva-E
+- All bus types shown — Ordinary, Semi Luxury, AC Seater, AC Sleeper, and state-specific brands (MSRTC Hirkani, Shivshahi, Shivneri; KSRTC Airavat; GSRTC Volvo, etc.)
 
 ### Fare Engine
 
-- Implements the official MSRTC stage-based fare model (effective 18 July 2026)
-- Supports all MSRTC bus classes with per-class stage rates
+- Implements the official stage-based fare model for each state (currently seeded with MSRTC 18 July 2026 rates)
+- Supports all major bus classes across Indian state transport operators with per-class stage rates
 - Full concession support — Child, Senior Citizen, Women, Student, Person with Disability
 - Per-stop-pair fare computation — a short hop always costs proportionally less
 
 ### Offline-First Network
 
-- Full MSRTC route graph bundled as a compact offline dataset (439 KB)
+- Full national route graph bundled as a compact offline dataset (439 KB)
 - Works without internet for route search and fare queries
 - Firebase Firestore used for real-time overlays (live bus positions, timetable updates)
 
@@ -252,7 +252,7 @@ SIH-BussPass/
 │   │   ├── core/
 │   │   │   ├── math/
 │   │   │   │   ├── journey_planner.dart     Time-dependent Dijkstra planner
-│   │   │   │   ├── fare_engine.dart         MSRTC stage fare model
+│   │   │   │   ├── fare_engine.dart         State transport stage fare model
 │   │   │   │   ├── eta_engine.dart          ETA with traffic model
 │   │   │   │   ├── occupancy_engine.dart    Seat occupancy estimation
 │   │   │   │   ├── geo.dart                 Haversine distance utilities
@@ -294,7 +294,7 @@ SIH-BussPass/
 │   ├── msrtc_data.js                  Master route, stop, and fare definitions
 │   ├── build_dataset.js               Compiles network.json from all sources
 │   ├── seed_firestore.js              Seeds Firestore with routes and fare matrices
-│   └── master_timetables.json         Scraped and verified MSRTC timetable rows
+│   └── master_timetables.json         Scraped and verified timetable rows (MSRTC)
 │
 ├── Bus-images/                        Source bus type photographs
 ├── ARCHITECTURE.md                    Extended architectural notes
@@ -337,7 +337,7 @@ SIH-BussPass/
 
 ```mermaid
 flowchart LR
-    A[scripts/msrtc_data.js\n91 Stands · 273 Routes\nWaypoints · Fare Model] --> C
+    A[scripts/msrtc_data.js\n91 Stands · 273 Routes (MSRTC — extendable to other states)\nWaypoints · Fare Model] --> C
     B[master_timetables.json\n988 Timetable Rows] --> C
 
     C[scripts/build_dataset.js] --> C1[Resolve via-stop\nGPS coordinates]
@@ -376,7 +376,7 @@ node seed_firestore.js
 
 ## Fare Engine
 
-The `FareEngine` class (`lib/core/math/fare_engine.dart`) implements the official MSRTC fare schedule effective 18 July 2026.
+The `FareEngine` class (`lib/core/math/fare_engine.dart`) implements stage-based fare models for Indian state transport corporations (MSRTC, KSRTC, GSRTC, etc.). The rate table shown here uses the MSRTC schedule (effective 18 July 2026) and can be extended per state.
 
 **Formula:**
 
