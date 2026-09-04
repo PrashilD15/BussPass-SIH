@@ -1,8 +1,29 @@
-# BussPass - Your Travel Partner
+<div align="center">
 
-**BussPass** is a smart, multilingual Android application designed for MSRTC (Maharashtra State Road Transport Corporation) bus commuters. It provides real-time journey planning, accurate fare computation, offline-capable route search, live bus tracking, and digital pass management.
+<img src="https://img.shields.io/badge/BussPass-Your%20Travel%20Partner-0E6B5C?style=for-the-badge&logoColor=white" alt="BussPass" />
 
-This project was developed for the **Smart India Hackathon (SIH)** under the theme of modernizing public transport for citizens of Maharashtra.
+<h1>BussPass — Your Travel Partner</h1>
+
+<p><strong>Smart journey planning, real-time tracking, and digital passes for MSRTC bus commuters across Maharashtra.</strong></p>
+
+<p>
+  <img src="https://img.shields.io/badge/Flutter-3.24-02569B?style=flat-square&logo=flutter&logoColor=white" />
+  <img src="https://img.shields.io/badge/Dart-3.11-0175C2?style=flat-square&logo=dart&logoColor=white" />
+  <img src="https://img.shields.io/badge/Firebase-Connected-FFCA28?style=flat-square&logo=firebase&logoColor=black" />
+  <img src="https://img.shields.io/badge/Google%20Maps-Integrated-4285F4?style=flat-square&logo=googlemaps&logoColor=white" />
+  <img src="https://img.shields.io/badge/SIH-2024--25-DC143C?style=flat-square" />
+  <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=flat-square&logo=android&logoColor=white" />
+</p>
+
+<p>
+  <img src="https://img.shields.io/badge/Stops-91-0E6B5C?style=flat-square" />
+  <img src="https://img.shields.io/badge/Routes-273-0E6B5C?style=flat-square" />
+  <img src="https://img.shields.io/badge/Services-602-0E6B5C?style=flat-square" />
+  <img src="https://img.shields.io/badge/Departures-5%2C494-0E6B5C?style=flat-square" />
+  <img src="https://img.shields.io/badge/Languages-4-0E6B5C?style=flat-square" />
+</p>
+
+</div>
 
 ---
 
@@ -27,107 +48,95 @@ This project was developed for the **Smart India Hackathon (SIH)** under the the
 
 ## Problem Statement
 
-Millions of MSRTC commuters face the following challenges daily:
+Millions of MSRTC commuters across Maharashtra face these challenges every day:
 
-- No centralized digital platform to search and plan multi-stop bus journeys.
-- Fare calculation is opaque and inconsistent across bus types (Ordinary, Shivshahi, Shivneri, Hirkani, etc.).
-- No offline access to timetables in rural connectivity zones.
-- Bus schedules exist only on physical notice boards at bus stands.
-- No multilingual support for regional language speakers (Marathi, Hindi, Kannada).
-- Ticket management is paper-based with no digital alternative.
+| Pain Point | Impact |
+|---|---|
+| No digital journey planner | Commuters must ask locals or visit the stand physically |
+| Opaque fare calculation | Confusion between bus types (Ordinary vs Shivneri, etc.) |
+| No offline timetable access | Rural areas with poor connectivity have zero digital support |
+| Paper-only schedules | Information exists only on notice boards at bus stands |
+| No multilingual support | Marathi and Hindi-speaking users cannot use English-only apps |
+| Paper tickets only | No digital pass or wallet — easily lost, no history |
 
 ---
 
 ## Solution Overview
 
-BussPass digitizes the entire MSRTC commuter experience. It provides a mobile-first application that:
+BussPass digitizes the entire MSRTC commuter experience as a mobile-first Android application:
 
-1. Allows commuters to search for routes between any two stops in the MSRTC network.
-2. Computes the optimal journey path using a time-dependent Dijkstra algorithm accounting for transfers, bus type tiers, fare, and total travel time.
-3. Displays accurate, MSRTC-official stage-based fares for every leg of the journey and for every bus type.
-4. Works offline via a bundled network.json dataset that is pre-built from verified MSRTC timetable data.
-5. Provides a live map to view nearby bus stands and active buses.
-6. Supports Marathi, Hindi, Kannada, and English with a single tap.
-7. Manages digital pass purchases and QR-based ticket scanning.
+- Search routes between any two stops across the full MSRTC network
+- Compute the optimal journey path using a time-dependent Dijkstra algorithm — accounting for transfers, bus type, fare, and total travel time
+- Display accurate MSRTC-official stage-based fares for every leg and every bus class
+- Work completely offline via a bundled `network.json` dataset pre-built from verified MSRTC timetable data
+- Show a live map of nearby bus stands and active buses
+- Switch between English, Marathi, Hindi, and Kannada with a single tap
+- Manage digital pass purchases and QR-based ticket scanning
 
 ---
 
 ## Application Flow
 
-```
-[ Launch App ]
-      |
-      v
-[ Authentication Check ]
-      |
-      +--- No User -----> [ Language Selection Screen ]
-      |                            |
-      |                            v
-      |                   [ Auth Screen (Google Sign-In) ]
-      |                            |
-      v                            v
-[ Dashboard (Authenticated) ] <----+
-      |
-      +--- Home Tab
-      |        |
-      |        +---> [ Search Bar ]
-      |        |             |
-      |        |             v
-      |        |     [ Journey Search Screen ]
-      |        |             |
-      |        |     [ User enters Origin + Destination ]
-      |        |             |
-      |        |             v
-      |        |     [ JourneyPlanner.plan() ]
-      |        |       |
-      |        |       +-- Loads TransitNetwork (bundled network.json)
-      |        |       +-- Builds adjacency graph (TransitGraph)
-      |        |       +-- Runs time-dependent Dijkstra
-      |        |       +-- Ranks by preference (fastest / cheapest / fewest changes)
-      |        |       +-- Diversifies results (guarantees direct option if exists)
-      |        |             |
-      |        |             v
-      |        |     [ Itinerary Results List ]
-      |        |             |
-      |        |             v
-      |        |     [ Journey Details Screen ]
-      |        |       |
-      |        |       +-- Per-leg breakdown: bus type, fare, duration
-      |        |       +-- Bus image (from Firebase Storage)
-      |        |       +-- Polyline map of the route
-      |        |       +-- Boarding reminder notification scheduled
-      |        |             |
-      |        |             v
-      |        |     [ Live Navigation Screen ]
-      |        |       |
-      |        |       +-- Real-time GPS tracking
-      |        |       +-- ETA recalculation with traffic model
-      |        |       +-- Halt and arrival alerts (local notifications)
-      |        |
-      |        +---> [ Quick Actions ]
-      |                  |
-      |                  +-- Live Map   --> [ Map Tab ]
-      |                  +-- Timetables --> [ Timetables Screen ]
-      |                  +-- Buy Pass   --> [ Passes Tab ]
-      |                  +-- My Passes  --> [ Passes Tab ]
-      |
-      +--- Map Tab
-      |        |
-      |        +-- Google Maps with custom sage-dark theme
-      |        +-- Nearby bus stands as custom rendered markers
-      |        +-- Marker tap shows stand name and service count
-      |
-      +--- Passes Tab
-      |        |
-      |        +-- Digital ticket list (QR-based)
-      |        +-- QR scanner for validation
-      |
-      +--- Profile Tab
-               |
-               +-- Account info
-               +-- Notification permission toggle
-               +-- Language preference
-               +-- Concession category (Senior / Student / Women / Disability)
+```mermaid
+flowchart TD
+    A([Launch App]) --> B{User Logged In?}
+
+    B -->|No| C[Language Selection Screen]
+    C --> D[Auth Screen\nGoogle Sign-In]
+    D --> E
+
+    B -->|Yes| E[Dashboard Screen]
+
+    E --> F[Home Tab]
+    E --> G[Map Tab]
+    E --> H[Passes Tab]
+    E --> I[Profile Tab]
+
+    F --> J[Search Bar Tap]
+    J --> K[Journey Search Screen\nEnter Origin & Destination]
+    K --> L[JourneyPlanner.plan\nTime-Dependent Dijkstra]
+
+    L --> L1[Load TransitNetwork\nfrom network.json]
+    L --> L2[Build TransitGraph\nadjacency index]
+    L --> L3[Run Dijkstra\nwith transfer penalty]
+    L --> L4[Rank by Preference\nfastest / cheapest / fewest changes]
+    L --> L5[Diversify Results\nguarantee direct option]
+
+    L1 & L2 & L3 & L4 & L5 --> M[Itinerary Results List]
+
+    M --> N[Journey Details Screen]
+    N --> N1[Per-leg breakdown\nbus type, fare, duration]
+    N --> N2[Bus image\nFirebase Storage]
+    N --> N3[Route polyline\non Google Maps]
+    N --> N4[Schedule boarding\nreminder notification]
+
+    N --> O[Live Navigation Screen]
+    O --> O1[Real-time GPS tracking]
+    O --> O2[ETA recalculation\nwith traffic model]
+    O --> O3[Halt and arrival\nalerts]
+
+    F --> P[Quick Actions]
+    P --> G
+    P --> Q[Timetables Screen]
+    P --> H
+
+    G --> G1[Google Maps\ncustom sage theme]
+    G --> G2[Nearby bus stands\ncustom markers]
+
+    H --> H1[Digital ticket list\nQR-based]
+    H --> H2[QR Scanner\nticket validation]
+
+    I --> I1[Account info]
+    I --> I2[Notification settings]
+    I --> I3[Language preference]
+    I --> I4[Concession category]
+
+    style A fill:#0E6B5C,color:#fff,stroke:none
+    style E fill:#0E6B5C,color:#fff,stroke:none
+    style L fill:#0A4E43,color:#fff,stroke:none
+    style M fill:#DFF0EA,color:#11151C,stroke:#0E6B5C
+    style N fill:#DFF0EA,color:#11151C,stroke:#0E6B5C
+    style O fill:#DFF0EA,color:#11151C,stroke:#0E6B5C
 ```
 
 ---
@@ -136,76 +145,101 @@ BussPass digitizes the entire MSRTC commuter experience. It provides a mobile-fi
 
 ### Journey Planning
 
-- Multi-leg journey planning across the entire MSRTC network.
-- Transfers supported at major interchange stops (Nashik CBS, Pune Station, Mumbai Central, etc.).
-- Preference-based sorting: fastest arrival, cheapest fare, or fewest changes.
-- Guaranteed diversity in results — always shows a direct option when one exists.
+- Multi-leg journey planning across the entire MSRTC network
+- Transfers supported at major interchange stops (Nashik CBS, Pune Station, Mumbai Central, etc.)
+- Preference-based sorting — fastest, cheapest, or fewest changes
+- Guaranteed diversity in results — always shows a direct option when one exists
+- All bus types shown: Ordinary, Hirkani, Shivshahi, Shivneri, E-Shivneri, E-Shiva-E
 
 ### Fare Engine
 
-- Implements the official MSRTC stage-based fare model (effective 18 July 2026 revision).
-- Supports all MSRTC bus classes: Ordinary, Semi Luxury (Hirkani / Ashiad), Shivshahi, Shivneri, Ordinary Sleeper, Shivneri Sleeper, E-Shiva-E, and E-Shivneri.
-- Concession support: Child (50%), Women (50%), Senior Citizen (free), Student (50%), Person with Disability (free).
-- Per-stop-pair fare computation — a short-hop fare is always proportional to distance.
+- Implements the official MSRTC stage-based fare model (effective 18 July 2026)
+- Supports all MSRTC bus classes with per-class stage rates
+- Full concession support — Child, Senior Citizen, Women, Student, Person with Disability
+- Per-stop-pair fare computation — a short hop always costs proportionally less
 
 ### Offline-First Network
 
-- The full MSRTC route graph (91 stops, 273 routes, 602 services, 5,494 departures) is bundled as a compact offline dataset.
-- The app works without internet for route search and fare queries.
-- Firebase Firestore is used for real-time overlays (live bus positions, timetable updates).
+- Full MSRTC route graph bundled as a compact offline dataset (439 KB)
+- Works without internet for route search and fare queries
+- Firebase Firestore used for real-time overlays (live bus positions, timetable updates)
 
 ### Live Map
 
-- Full-screen Google Maps view with a custom dark-sage theme.
-- All nearby bus stands plotted as custom-rendered markers.
-- Accurate route polylines that follow real road corridors, not straight-line approximations.
+- Full-screen Google Maps with a custom dark-sage theme
+- All nearby bus stands plotted as custom-rendered bitmap markers
+- Accurate route polylines that follow real road corridors, not straight-line approximations
 
 ### Notifications
 
-- Boarding reminders scheduled before departure.
-- Arrival alerts as the bus approaches the destination stop.
-- Halt stop alerts for overnight journeys.
+- Boarding reminders scheduled before departure
+- Arrival alerts as the bus approaches the destination stop
+- Halt stop alerts for overnight journeys
 
 ### Multilingual Support
 
-- English, Marathi, Hindi, and Kannada supported natively.
-- Language can be changed at any time from the Home Screen (A/अ button).
-- Selected language is persisted across app restarts.
+- English, Marathi, Hindi, and Kannada supported natively
+- Language can be changed at any time from the Home Screen (A/अ button)
+- Selected language persisted across app restarts
 
 ### Digital Passes
 
-- QR-code-based digital tickets.
-- Pass scanning and validation.
-- Multiple pass types: daily, weekly, monthly, and student passes.
+- QR-code-based digital tickets
+- Pass scanning and validation via mobile scanner
+- Multiple pass types: daily, weekly, monthly, student
 
 ---
 
 ## Architecture
 
-The application follows a layered, feature-first architecture:
+```mermaid
+flowchart LR
+    subgraph Presentation["Presentation Layer"]
+        direction TB
+        P1[Screens & Tabs]
+        P2[Widgets & Animations]
+    end
 
+    subgraph State["State Management — Riverpod"]
+        direction TB
+        S1[Providers]
+        S2[Notifiers]
+    end
+
+    subgraph Domain["Domain / Math Layer"]
+        direction TB
+        D1[JourneyPlanner\nDijkstra Algorithm]
+        D2[FareEngine\nMSRTC Stage Model]
+        D3[EtaEngine\nTraffic Model]
+        D4[OccupancyEngine]
+    end
+
+    subgraph Data["Data Layer"]
+        direction TB
+        DA1[NetworkRepository\nBundle + Firestore]
+        DA2[AuthRepository]
+        DA3[LocalStore\nSharedPreferences]
+    end
+
+    subgraph Infra["Infrastructure"]
+        direction TB
+        I1[Firebase Auth]
+        I2[Cloud Firestore]
+        I3[Firebase Storage]
+        I4[Google Maps]
+    end
+
+    Presentation --> State
+    State --> Domain
+    State --> Data
+    Data --> Infra
+
+    style Presentation fill:#DFF0EA,stroke:#0E6B5C,color:#11151C
+    style State fill:#e8f4f1,stroke:#0E6B5C,color:#11151C
+    style Domain fill:#0E6B5C,stroke:none,color:#fff
+    style Data fill:#0A4E43,stroke:none,color:#fff
+    style Infra fill:#11151C,stroke:none,color:#fff
 ```
-Presentation Layer   (Flutter Widgets, Screens, Tabs)
-        |
-        v
-State Management     (Riverpod Providers)
-        |
-        v
-Domain / Math Layer  (JourneyPlanner, FareEngine, EtaEngine, OccupancyEngine)
-        |
-        v
-Data Layer           (Repositories, Models, Firebase SDK)
-        |
-        v
-Infrastructure       (Firebase Auth, Firestore, Firebase Storage, Google Maps)
-```
-
-Key design decisions:
-
-- Riverpod is used exclusively for state management. No setState in business logic.
-- Offline-first: The network.json bundle is the single source of truth for the route graph. Firestore overlays supplement it but are not required for core search.
-- Math is pure Dart: All planning, fare, and ETA logic is implemented as pure Dart classes with no external dependencies, making them fully unit-testable.
-- Immutable models: All domain models (NetworkStop, TransitRoute, TransitService, Itinerary, JourneyLeg) are immutable value objects.
 
 ---
 
@@ -213,61 +247,58 @@ Key design decisions:
 
 ```
 SIH-BussPass/
-|
-|-- busspass/                         Flutter application
-|   |-- lib/
-|   |   |-- core/
-|   |   |   |-- math/
-|   |   |   |   |-- journey_planner.dart     Time-dependent Dijkstra planner
-|   |   |   |   |-- fare_engine.dart         MSRTC stage fare model
-|   |   |   |   |-- eta_engine.dart          ETA with traffic model
-|   |   |   |   |-- occupancy_engine.dart    Seat occupancy estimation
-|   |   |   |   |-- geo.dart                 Haversine distance utilities
-|   |   |   |   |-- schedule.dart            Departure and arrival scheduling
-|   |   |   |-- services/
-|   |   |   |   |-- notification_service.dart
-|   |   |   |   |-- transit_detection_service.dart
-|   |   |   |   |-- travel_pattern_alerts.dart
-|   |   |   |-- utils/
-|   |   |       |-- bus_image_helper.dart    Firebase Storage image URL map
-|   |   |
-|   |   |-- data/
-|   |   |   |-- models/
-|   |   |   |   |-- network_models.dart      NetworkStop, TransitRoute, etc.
-|   |   |   |   |-- ticket.dart              Digital pass and ticket models
-|   |   |   |   |-- live_bus.dart            Real-time bus state
-|   |   |   |-- providers/
-|   |   |   |   |-- app_providers.dart       All Riverpod providers
-|   |   |   |   |-- auth_provider.dart
-|   |   |   |-- repositories/
-|   |   |       |-- network_repository.dart  Merges bundle and Firestore overlay
-|   |   |       |-- auth_repository.dart
-|   |   |       |-- local_store.dart         SharedPreferences wrapper
-|   |   |
-|   |   |-- features/
-|   |   |   |-- onboarding/                  Language selection and Auth screens
-|   |   |   |-- dashboard/                   4-tab main screen
-|   |   |   |-- journey/                     Search, details, live navigation
-|   |   |   |-- timetable/                   Static timetable viewer
-|   |   |
-|   |   |-- theme/                           Design system (colors, typography, widgets)
-|   |   |-- main.dart
-|   |
-|   |-- assets/
-|   |   |-- data/network.json                Bundled offline route graph (439 KB)
-|   |   |-- translations/                    en / mr / hi / kn JSON files
-|   |
-|   |-- pubspec.yaml
-|
-|-- scripts/                          Data pipeline (Node.js)
-|   |-- msrtc_data.js                 Master route, stop, and fare definitions
-|   |-- build_dataset.js              Compiles network.json from all sources
-|   |-- seed_firestore.js             Seeds Firestore with routes and fare matrices
-|   |-- master_timetables.json        Scraped and verified MSRTC timetable rows
-|
-|-- Bus-images/                       Source bus type photographs
-|-- ARCHITECTURE.md                   Extended architectural notes
-|-- README.md
+├── busspass/                          Flutter application
+│   ├── lib/
+│   │   ├── core/
+│   │   │   ├── math/
+│   │   │   │   ├── journey_planner.dart     Time-dependent Dijkstra planner
+│   │   │   │   ├── fare_engine.dart         MSRTC stage fare model
+│   │   │   │   ├── eta_engine.dart          ETA with traffic model
+│   │   │   │   ├── occupancy_engine.dart    Seat occupancy estimation
+│   │   │   │   ├── geo.dart                 Haversine distance utilities
+│   │   │   │   └── schedule.dart            Departure and arrival scheduling
+│   │   │   ├── services/
+│   │   │   │   ├── notification_service.dart
+│   │   │   │   ├── transit_detection_service.dart
+│   │   │   │   └── travel_pattern_alerts.dart
+│   │   │   └── utils/
+│   │   │       └── bus_image_helper.dart    Firebase Storage image URL map
+│   │   │
+│   │   ├── data/
+│   │   │   ├── models/
+│   │   │   │   ├── network_models.dart      NetworkStop, TransitRoute, etc.
+│   │   │   │   ├── ticket.dart              Digital pass and ticket models
+│   │   │   │   └── live_bus.dart            Real-time bus state
+│   │   │   ├── providers/
+│   │   │   │   ├── app_providers.dart       All Riverpod providers
+│   │   │   │   └── auth_provider.dart
+│   │   │   └── repositories/
+│   │   │       ├── network_repository.dart  Merges bundle and Firestore overlay
+│   │   │       ├── auth_repository.dart
+│   │   │       └── local_store.dart         SharedPreferences wrapper
+│   │   │
+│   │   ├── features/
+│   │   │   ├── onboarding/                  Language selection and Auth screens
+│   │   │   ├── dashboard/                   4-tab main screen
+│   │   │   ├── journey/                     Search, details, live navigation
+│   │   │   └── timetable/                   Static timetable viewer
+│   │   │
+│   │   ├── theme/                           Design system
+│   │   └── main.dart
+│   │
+│   └── assets/
+│       ├── data/network.json                Bundled offline route graph (439 KB)
+│       └── translations/                    en / mr / hi / kn JSON files
+│
+├── scripts/                           Data pipeline (Node.js)
+│   ├── msrtc_data.js                  Master route, stop, and fare definitions
+│   ├── build_dataset.js               Compiles network.json from all sources
+│   ├── seed_firestore.js              Seeds Firestore with routes and fare matrices
+│   └── master_timetables.json         Scraped and verified MSRTC timetable rows
+│
+├── Bus-images/                        Source bus type photographs
+├── ARCHITECTURE.md                    Extended architectural notes
+└── README.md
 ```
 
 ---
@@ -276,26 +307,27 @@ SIH-BussPass/
 
 ### Mobile Application
 
-| Technology | Purpose |
-|---|---|
-| Flutter (Dart) | Cross-platform mobile framework |
-| Riverpod 3 | State management and dependency injection |
-| Firebase Authentication | Google and Facebook sign-in |
-| Cloud Firestore | Real-time database for routes and timetables |
-| Firebase Storage | Bus type images |
-| Google Maps Flutter | Live map, route polylines, custom markers |
-| Easy Localization | Multilingual support (en, mr, hi, kn) |
-| Flutter Animate | Micro-animations and transitions |
-| Flutter Local Notifications | Boarding and arrival alerts |
-| Mobile Scanner | QR code scanning for ticket validation |
-| QR Flutter | QR code generation |
-| Geolocator | Device GPS for nearest-stop lookup |
+| Technology | Version | Purpose |
+|---|---|---|
+| ![Flutter](https://img.shields.io/badge/Flutter-02569B?style=flat-square&logo=flutter&logoColor=white) | 3.24 | Cross-platform mobile framework |
+| ![Dart](https://img.shields.io/badge/Dart-0175C2?style=flat-square&logo=dart&logoColor=white) | 3.11 | Application language |
+| ![Riverpod](https://img.shields.io/badge/Riverpod-3.x-00B0FF?style=flat-square) | 3.x | State management and dependency injection |
+| ![Firebase](https://img.shields.io/badge/Firebase%20Auth-FFCA28?style=flat-square&logo=firebase&logoColor=black) | 6.x | Google and Facebook sign-in |
+| ![Firestore](https://img.shields.io/badge/Firestore-FFCA28?style=flat-square&logo=firebase&logoColor=black) | 6.x | Real-time database |
+| ![Storage](https://img.shields.io/badge/Firebase%20Storage-FFCA28?style=flat-square&logo=firebase&logoColor=black) | — | Bus type images |
+| ![Google Maps](https://img.shields.io/badge/Google%20Maps-4285F4?style=flat-square&logo=googlemaps&logoColor=white) | 2.18 | Live map, polylines, custom markers |
+| Easy Localization | 3.x | Multilingual support (en, mr, hi, kn) |
+| Flutter Animate | 4.x | Micro-animations and transitions |
+| Flutter Local Notifications | 22.x | Boarding and arrival alerts |
+| Mobile Scanner | 7.x | QR code scanning |
+| QR Flutter | 4.x | QR code generation |
+| Geolocator | 14.x | Device GPS for nearest-stop lookup |
 
 ### Data Pipeline
 
 | Technology | Purpose |
 |---|---|
-| Node.js | Dataset compilation scripts |
+| Node.js 18 | Dataset compilation scripts |
 | Firebase Admin SDK | Firestore and Storage seeding |
 | Haversine geometry | Distance computation for stop-pair fares |
 
@@ -303,43 +335,37 @@ SIH-BussPass/
 
 ## Data Pipeline
 
-The offline route graph is built by a Node.js pipeline:
+```mermaid
+flowchart LR
+    A[scripts/msrtc_data.js\n91 Stands · 273 Routes\nWaypoints · Fare Model] --> C
+    B[master_timetables.json\n988 Timetable Rows] --> C
 
-```
-scripts/msrtc_data.js
-   |
-   Contains:
-     STANDS       - 91 bus stands with exact GPS coordinates
-     WAYPOINTS    - Road junction reference points
-     ROUTES       - Curated corridor definitions with via-stops and bus types
-     computeFare  - Official MSRTC stage fare model
-   |
-   v
-scripts/build_dataset.js
-   |
-   Reads: msrtc_data.js + master_timetables.json (988 timetable rows)
-   Performs:
-     - Resolves via-stop city names to exact GPS coordinates
-     - Computes cumulative distance at each stop along the corridor
-     - Synthesizes headway-based departure schedules for corridors without timetables
-     - Validates geometry (rejects pairs where declared km is implausible)
-     - Raises corridor distance to geometric floor when declared distance is too short
-   |
-   v
-busspass/assets/data/network.json
-   |
-   Contains: 91 stops, 273 routes, 602 services, 5,494 departures (439 KB)
-   Loaded at: app startup, cached in memory by NetworkRepository
+    C[scripts/build_dataset.js] --> C1[Resolve via-stop\nGPS coordinates]
+    C --> C2[Compute cumulative\ndistance at each stop]
+    C --> C3[Synthesize headway-based\ndeparture schedules]
+    C --> C4[Validate geometry\nreject implausible pairs]
+
+    C1 & C2 & C3 & C4 --> D[busspass/assets/data/network.json\n91 stops · 273 routes · 602 services · 5494 departures · 439 KB]
+
+    D --> E[NetworkRepository\nLoaded at app startup\nCached in memory]
+    D --> F[JourneyPlanner\nDijkstra over TransitGraph]
+
+    style A fill:#0E6B5C,color:#fff,stroke:none
+    style B fill:#0E6B5C,color:#fff,stroke:none
+    style C fill:#0A4E43,color:#fff,stroke:none
+    style D fill:#DFF0EA,color:#11151C,stroke:#0E6B5C,font-weight:bold
+    style E fill:#11151C,color:#fff,stroke:none
+    style F fill:#11151C,color:#fff,stroke:none
 ```
 
-To rebuild the dataset after modifying routes or timetables:
+**Rebuild the dataset after modifying routes:**
 
 ```bash
 cd scripts
 node build_dataset.js
 ```
 
-To seed Firestore with the full route graph and per-stop fare matrices:
+**Seed Firestore with routes and fare matrices:**
 
 ```bash
 cd scripts
@@ -350,23 +376,23 @@ node seed_firestore.js
 
 ## Fare Engine
 
-The FareEngine class in `lib/core/math/fare_engine.dart` implements the official MSRTC fare schedule effective 18 July 2026.
+The `FareEngine` class (`lib/core/math/fare_engine.dart`) implements the official MSRTC fare schedule effective 18 July 2026.
 
 **Formula:**
 
 ```
-stages   = ceil(distance_km / 6)
-raw_fare = stages x stage_rate
-base_fare = max(10, round_to_nearest_5(raw_fare))
-final_fare = base_fare x (1 - concession_percent / 100)
+stages    = ceil(distance_km / 6)
+raw_fare  = stages × stage_rate
+base_fare = max(₹10, round_to_nearest_₹5(raw_fare))
+final_fare = base_fare × (1 − concession_percent / 100)
 ```
 
-**Stage rates (rupees per 6 km stage):**
+**Stage rates:**
 
-| Bus Class | Rate (Rs. per stage) |
+| Bus Class | Rate (Rs. / 6 km stage) |
 |---|---|
-| Ordinary | 11.40 |
-| Semi Luxury (Hirkani / Ashiad) | 13.65 |
+| Ordinary (Lalpari) | 11.40 |
+| Semi Luxury — Hirkani / Ashiad | 13.65 |
 | Ordinary Sleeper-Seater | 15.50 |
 | Ordinary Sleeper | 16.75 |
 | Shivshahi AC Seater | 14.20 |
@@ -379,36 +405,57 @@ final_fare = base_fare x (1 - concession_percent / 100)
 | Category | Discount |
 |---|---|
 | Adult | 0% |
-| Child (5 to 12 years) | 50% |
-| Senior Citizen (65 and above) | 100% (free) |
-| Women - Mahila Samman Yojana | 50% |
+| Child (5–12 years) | 50% |
+| Senior Citizen (65 and above) | 100% — free |
+| Women — Mahila Samman Yojana | 50% |
 | Student | 50% |
-| Person with Disability | 100% (free) |
+| Person with Disability | 100% — free |
 
 ---
 
 ## Journey Planner Algorithm
 
-The JourneyPlanner class (`lib/core/math/journey_planner.dart`) implements a time-dependent Dijkstra over the transit graph.
+```mermaid
+flowchart TD
+    A([Start: plan origin → destination]) --> B[Initialize priority queue\nwith origin at departure time]
 
-**State space:**
+    B --> C{Queue empty?}
+    C -->|Yes| I([Return ranked results])
+    C -->|No| D[Pop lowest-cost label\nstop_id, transfers, service_tier, cost]
 
-Each node in the priority queue is a label `(stop_id, transfers, service_tier, cost_minutes)`. The service tier is included in the key so that a slower, cheaper bus class (Ordinary) is not pruned merely because a faster, more expensive class (Shivneri) already settled the same stop.
+    D --> E{Already settled\nthis stop+transfers+tier?}
+    E -->|Yes — skip| C
+    E -->|No| F[Mark as settled]
 
-**Cost function:**
+    F --> G{Is this\nthe destination?}
+    G -->|Yes| H[Reconstruct path\nbuild Itinerary]
+    H --> I
 
+    G -->|No| J[For each service\ncalling at this stop]
+
+    J --> K[Find next departure\nafter ready time]
+    K --> L{Departure found\nwithin max wait?}
+    L -->|No| C
+
+    L -->|Yes| M[For each downstream stop\non this service]
+    M --> N[Compute arrival time\nand cost]
+    N --> O{Better than\nbest known?}
+    O -->|No| M
+    O -->|Yes| P[Push new label\nto priority queue]
+    P --> M
+    M --> C
+
+    I --> Q[_rank: sort by\nfastest/cheapest/fewest changes]
+    Q --> R[_diversify: remove\nnear-duplicates, guarantee direct option]
+    R --> S([Return up to 5 itineraries])
+
+    style A fill:#0E6B5C,color:#fff,stroke:none
+    style S fill:#0E6B5C,color:#fff,stroke:none
+    style H fill:#DFF0EA,color:#11151C,stroke:#0E6B5C
+    style I fill:#DFF0EA,color:#11151C,stroke:#0E6B5C
 ```
-cost = elapsed_minutes + (transfer_count x transfer_penalty_minutes)
-```
 
-The default transfer penalty is 40 minutes. This means the planner prefers a direct route that takes slightly longer over a route requiring one extra change.
-
-**Post-processing:**
-
-1. _rank() sorts results by user preference (fastest / cheapest / fewest changes / earliest arrival).
-2. _diversify() removes near-duplicate itineraries (same route and class, arriving within 45 minutes). Always guarantees one direct option and one cheapest option are visible.
-
-**Default configuration (PlannerConfig):**
+**Default PlannerConfig:**
 
 | Parameter | Default |
 |---|---|
@@ -423,20 +470,20 @@ The default transfer penalty is 40 minutes. This means the planner prefers a dir
 
 ## Localization
 
-The app uses easy_localization for multilingual support. Translation files are in `assets/translations/`.
+The app uses `easy_localization`. Translation files are in `assets/translations/`.
 
-| Code | Language |
-|---|---|
-| en | English |
-| mr | Marathi |
-| hi | Hindi |
-| kn | Kannada |
+| Badge | Language Code | Language |
+|---|---|---|
+| ![EN](https://img.shields.io/badge/EN-English-blue?style=flat-square) | `en` | English |
+| ![MR](https://img.shields.io/badge/MR-Marathi-orange?style=flat-square) | `mr` | Marathi |
+| ![HI](https://img.shields.io/badge/HI-Hindi-green?style=flat-square) | `hi` | Hindi |
+| ![KN](https://img.shields.io/badge/KN-Kannada-red?style=flat-square) | `kn` | Kannada |
 
-The user can switch language at any time using the **A/अ** button on the Home Screen. The selected locale is persisted across app restarts.
+Language is changed from the **A/अ** button on the Home Screen and persisted across restarts.
 
 To add a new translation key:
-1. Add the key-value pair to each file in `busspass/assets/translations/`.
-2. Use `'key'.tr()` in the Dart widget.
+1. Add the key-value pair to each JSON file in `busspass/assets/translations/`.
+2. Reference it in Dart code as `'section.key'.tr()`.
 
 ---
 
@@ -444,38 +491,43 @@ To add a new translation key:
 
 ### Prerequisites
 
-- Flutter SDK 3.24 or higher
-- Dart SDK 3.11 or higher
-- Android Studio or VS Code with Flutter extension
-- A Firebase project with Authentication, Firestore, and Storage enabled
-- Google Maps API key (Android)
-- Node.js 18 or higher (for data pipeline scripts only)
+| Requirement | Version |
+|---|---|
+| Flutter SDK | 3.24 or higher |
+| Dart SDK | 3.11 or higher |
+| Android Studio or VS Code | Latest stable |
+| Firebase project | Auth + Firestore + Storage enabled |
+| Google Maps API key | Android Maps SDK |
+| Node.js | 18 or higher (scripts only) |
 
 ### Steps
 
-1. Clone the repository:
+**1. Clone the repository**
 
 ```bash
 git clone https://github.com/PrashilD15/BussPass-SIH.git
 cd BussPass-SIH
 ```
 
-2. Install Flutter dependencies:
+**2. Install Flutter dependencies**
 
 ```bash
 cd busspass
 flutter pub get
 ```
 
-3. Configure Firebase:
-   - Create a Firebase project at https://console.firebase.google.com
-   - Enable Google Sign-In under Authentication
-   - Create a Firestore database in Native mode
-   - Enable Firebase Storage
-   - Download google-services.json and place it at `busspass/android/app/google-services.json`
-   - Run `flutterfire configure` to regenerate firebase_options.dart
+**3. Configure Firebase**
 
-4. Set your Google Maps API key in `busspass/android/app/src/main/AndroidManifest.xml`:
+- Create a project at https://console.firebase.google.com
+- Enable Google Sign-In under Authentication
+- Create a Firestore database in Native mode
+- Enable Firebase Storage
+- Download `google-services.json` → place at `busspass/android/app/google-services.json`
+- Run `flutterfire configure` to regenerate `firebase_options.dart`
+
+**4. Set your Google Maps API key**
+
+In `busspass/android/app/src/main/AndroidManifest.xml`:
 
 ```xml
 <meta-data
@@ -483,17 +535,17 @@ flutter pub get
     android:value="YOUR_API_KEY_HERE" />
 ```
 
-5. (Optional) Run the data pipeline:
+**5. (Optional) Run the data pipeline**
 
 ```bash
 cd scripts
 npm install
-# Place your Firebase service account key at scripts/serviceAccountKey.json
+# Place Firebase service account key at scripts/serviceAccountKey.json
 node build_dataset.js
 node seed_firestore.js
 ```
 
-6. Run the app:
+**6. Run the application**
 
 ```bash
 cd busspass
@@ -504,7 +556,7 @@ flutter run
 
 ## Environment Variables
 
-The following files must not be committed to version control and are listed in .gitignore:
+> These files must NOT be committed to version control. All are listed in `.gitignore`.
 
 | File | Purpose |
 |---|---|
@@ -527,4 +579,12 @@ The following files must not be committed to version control and are listed in .
 
 ---
 
-Developed for Smart India Hackathon (SIH) 2024-25.
+<div align="center">
+
+Developed for **Smart India Hackathon (SIH) 2024-25**
+
+<img src="https://img.shields.io/badge/Made%20with-Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white" />
+<img src="https://img.shields.io/badge/Powered%20by-Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" />
+<img src="https://img.shields.io/badge/Maps%20by-Google-4285F4?style=for-the-badge&logo=googlemaps&logoColor=white" />
+
+</div>
