@@ -265,7 +265,7 @@ class HomeTab extends ConsumerWidget {
               const SizedBox(height: AppSpacing.md),
               ListTile(
                 title: const Text('English'),
-                trailing: currentLocale == 'en' ? const Icon(Icons.check, color: AppColors.primary) : null,
+                trailing: currentLocale == 'en' ? const Icon(Icons.check, color: AppColors.brand) : null,
                 onTap: () {
                   context.setLocale(const Locale('en'));
                   Navigator.pop(context);
@@ -273,7 +273,7 @@ class HomeTab extends ConsumerWidget {
               ),
               ListTile(
                 title: const Text('मराठी (Marathi)'),
-                trailing: currentLocale == 'mr' ? const Icon(Icons.check, color: AppColors.primary) : null,
+                trailing: currentLocale == 'mr' ? const Icon(Icons.check, color: AppColors.brand) : null,
                 onTap: () {
                   context.setLocale(const Locale('mr'));
                   Navigator.pop(context);
@@ -281,7 +281,7 @@ class HomeTab extends ConsumerWidget {
               ),
               ListTile(
                 title: const Text('हिंदी (Hindi)'),
-                trailing: currentLocale == 'hi' ? const Icon(Icons.check, color: AppColors.primary) : null,
+                trailing: currentLocale == 'hi' ? const Icon(Icons.check, color: AppColors.brand) : null,
                 onTap: () {
                   context.setLocale(const Locale('hi'));
                   Navigator.pop(context);
@@ -289,7 +289,7 @@ class HomeTab extends ConsumerWidget {
               ),
               ListTile(
                 title: const Text('ಕನ್ನಡ (Kannada)'),
-                trailing: currentLocale == 'kn' ? const Icon(Icons.check, color: AppColors.primary) : null,
+                trailing: currentLocale == 'kn' ? const Icon(Icons.check, color: AppColors.brand) : null,
                 onTap: () {
                   context.setLocale(const Locale('kn'));
                   Navigator.pop(context);
