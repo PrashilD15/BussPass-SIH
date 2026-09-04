@@ -6,8 +6,8 @@ import 'package:busspass/features/journey/presentation/journey_search_screen.dar
 import 'package:busspass/features/timetable/presentation/timetables_screen.dart';
 import 'package:busspass/theme/app_colors.dart';
 import 'package:busspass/theme/app_theme.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:busspass/theme/widgets/app_widgets.dart';
-
 class HomeTab extends ConsumerWidget {
   final VoidCallback onNavigateToMap;
 
@@ -51,19 +51,41 @@ class HomeTab extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.hairline),
-                    ),
-                    child: const Icon(
-                      Icons.notifications_outlined,
-                      color: AppColors.inkSoft,
-                      size: 22,
-                    ),
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => _showLanguagePicker(context),
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.hairline),
+                          ),
+                          child: const Icon(
+                            Icons.language_outlined,
+                            color: AppColors.inkSoft,
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.hairline),
+                        ),
+                        child: const Icon(
+                          Icons.notifications_outlined,
+                          color: AppColors.inkSoft,
+                          size: 22,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.08),
@@ -215,6 +237,60 @@ class HomeTab extends ConsumerWidget {
     if (h < 12) return 'Good morning,';
     if (h < 17) return 'Good afternoon,';
     return 'Good evening,';
+  }
+
+  void _showLanguagePicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.canvas,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.radiusLg)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Select Language',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              ListTile(
+                title: const Text('English'),
+                onTap: () {
+                  context.setLocale(const Locale('en'));
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: const Text('मराठी (Marathi)'),
+                onTap: () {
+                  context.setLocale(const Locale('mr'));
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: const Text('हिंदी (Hindi)'),
+                onTap: () {
+                  context.setLocale(const Locale('hi'));
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: const Text('ಕನ್ನಡ (Kannada)'),
+                onTap: () {
+                  context.setLocale(const Locale('kn'));
+                  Navigator.pop(context);
+                },
+              ),
+              const SizedBox(height: AppSpacing.lg),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 
