@@ -65,13 +65,25 @@ class NetworkRepository {
   NetworkRepository({
     FirebaseFirestore? firestore,
     AssetBundle? bundle,
+    String? Function()? readOverlayCache,
+    DateTime? Function()? readOverlayCachedAt,
+    Future<void> Function(String json)? writeOverlayCache,
   })  : _firestore = firestore,
-        _bundle = bundle;
+        _bundle = bundle,
+        _readOverlayCache = readOverlayCache,
+        _readOverlayCachedAt = readOverlayCachedAt,
+        _writeOverlayCache = writeOverlayCache;
 
   final FirebaseFirestore? _firestore;
   final AssetBundle? _bundle;
 
-  static const String assetPath = 'assets/data/network.json';
+  // Persistent overlay cache hooks (backed by LocalStore). All optional: with
+  // none supplied the repository behaves exactly as before.
+  final String? Function()? _readOverlayCache;
+  final DateTime? Function()? _readOverlayCachedAt;
+  final Future<void> Function(String json)? _writeOverlayCache;
+
+  // The static assetPath has been removed to allow dynamic dataset loading.
 
   /// How long to wait for Firestore before falling back to bundled data.
   ///
@@ -79,10 +91,14 @@ class NetworkRepository {
   /// their departure board immediately, not after a 30-second timeout.
   static const Duration overlayTimeout = Duration(seconds: 6);
 
+  /// How long a cached overlay is trusted before we re-fetch. Within this
+  /// window the Firestore read is skipped entirely — instant launch, no cost.
+  static const Duration overlayCacheTtl = Duration(hours: 12);
+
   TransitNetwork? _bundledCache;
 
   /// Parse the bundled dataset. Cached, since it is immutable reference data.
-  Future<TransitNetwork> loadBundled() async {
+  Future<TransitNetwork> loadBundled({required String assetPath}) async {
     final cached = _bundledCache;
     if (cached != null) return cached;
 
@@ -95,8 +111,8 @@ class NetworkRepository {
   }
 
   /// Load the network, overlaying Firestore when available.
-  Future<NetworkSnapshot> load({bool allowOverlay = true}) async {
-    final bundled = await loadBundled();
+  Future<NetworkSnapshot> load({required String assetPath, bool allowOverlay = true}) async {
+    final bundled = await loadBundled(assetPath: assetPath);
 
     if (!allowOverlay || _firestore == null) {
       return NetworkSnapshot(
@@ -104,6 +120,24 @@ class NetworkRepository {
         source: NetworkSource.bundled,
         loadedAt: DateTime.now(),
       );
+    }
+
+    // Fresh cache: serve it and skip the Firestore round-trip entirely.
+    final cachedAt = _readOverlayCachedAt?.call();
+    final cachedJson = _readOverlayCache?.call();
+    if (cachedJson != null &&
+        cachedAt != null &&
+        DateTime.now().difference(cachedAt) < overlayCacheTtl) {
+      final cached = _overlayFromJson(cachedJson);
+      if (cached != null && (cached.stops.isNotEmpty || cached.routes.isNotEmpty)) {
+        return NetworkSnapshot(
+          network: _merge(bundled, cached),
+          source: NetworkSource.merged,
+          loadedAt: DateTime.now(),
+          overlayStops: cached.stops.length,
+          overlayRoutes: cached.routes.length,
+        );
+      }
     }
 
     try {
@@ -116,6 +150,8 @@ class NetworkRepository {
           loadedAt: DateTime.now(),
         );
       }
+      // Persist for the next cold start (stale-while-revalidate).
+      await _writeOverlayCache?.call(_overlayToJson(overlay));
       return NetworkSnapshot(
         network: _merge(bundled, overlay),
         source: NetworkSource.merged,
@@ -124,6 +160,23 @@ class NetworkRepository {
         overlayRoutes: overlay.routes.length,
       );
     } catch (error, stack) {
+      // Live fetch failed — fall back to a stale cache before bundled data, so
+      // a brief outage still shows the last-known live network.
+      if (cachedJson != null) {
+        final cached = _overlayFromJson(cachedJson);
+        if (cached != null &&
+            (cached.stops.isNotEmpty || cached.routes.isNotEmpty)) {
+          debugPrint('NetworkRepository: using stale overlay cache — $error');
+          return NetworkSnapshot(
+            network: _merge(bundled, cached),
+            source: NetworkSource.merged,
+            loadedAt: DateTime.now(),
+            overlayStops: cached.stops.length,
+            overlayRoutes: cached.routes.length,
+            overlayError: error.toString(),
+          );
+        }
+      }
       // A failed overlay is not a failed load. Log it and carry on offline.
       debugPrint('NetworkRepository: Firestore overlay unavailable — $error');
       assert(() {
@@ -284,6 +337,30 @@ class NetworkRepository {
       out.add(t % 1440);
     }
     return out.isEmpty ? [first] : out;
+  }
+
+  /// Serialise an overlay for the persistent cache.
+  String _overlayToJson(_Overlay overlay) => jsonEncode({
+        'stops': overlay.stops.map((s) => s.toJson()).toList(),
+        'routes': overlay.routes.map((r) => r.toJson()).toList(),
+      });
+
+  /// Rebuild an overlay from cached JSON. Returns null on any corruption, so a
+  /// bad cache entry falls through to a live fetch rather than crashing.
+  _Overlay? _overlayFromJson(String raw) {
+    try {
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      final stops = (json['stops'] as List<dynamic>? ?? const [])
+          .map((e) => NetworkStop.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      final routes = (json['routes'] as List<dynamic>? ?? const [])
+          .map((e) => TransitRoute.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      return _Overlay(stops: stops, routes: routes);
+    } catch (error) {
+      debugPrint('NetworkRepository: overlay cache corrupt — $error');
+      return null;
+    }
   }
 }
 

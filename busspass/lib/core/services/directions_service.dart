@@ -58,18 +58,43 @@ class DirectionsService {
   /// OSRM — no key needed, robust and fast. Coordinates are lon,lat pairs.
   Future<DirectionsResult?> _osrm(
       LatLng origin, List<LatLng> waypoints, LatLng destination) async {
+    // First try with all waypoints
+    var result = await _osrmRequest(origin, waypoints, destination);
+    if (result != null) return result;
+    
+    // If that fails (often due to unroutable intermediate bus stops),
+    // fallback to just origin and destination
+    if (waypoints.isNotEmpty) {
+      print('OSRM: Waypoint route failed, falling back to origin->destination');
+      result = await _osrmRequest(origin, [], destination);
+    }
+    return result;
+  }
+
+  Future<DirectionsResult?> _osrmRequest(
+      LatLng origin, List<LatLng> waypoints, LatLng destination) async {
     final coords = [origin, ...waypoints, destination]
         .map((p) => '${p.longitude},${p.latitude}')
         .join(';');
     final uri = Uri.parse(
         '$_osrmBase/$coords?overview=full&geometries=polyline&steps=false');
     try {
+      print('OSRM Requesting: $uri');
       final res = await _client
-          .get(uri, headers: {'Accept': 'application/json'})
+          .get(uri, headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'BussPass/1.0 (sih_prototype)',
+          })
           .timeout(const Duration(seconds: 25));
-      if (res.statusCode != 200) return null;
+      if (res.statusCode != 200) {
+        print('OSRM failed with status ${res.statusCode}: ${res.body}');
+        return null;
+      }
       final body = jsonDecode(res.body) as Map<String, dynamic>;
-      if (body['code'] != 'Ok') return null;
+      if (body['code'] != 'Ok') {
+        print('OSRM error code: ${body["code"]}');
+        return null;
+      }
       final routes = (body['routes'] as List?) ?? [];
       if (routes.isEmpty) return null;
       final r = routes.first as Map<String, dynamic>;
@@ -81,7 +106,8 @@ class DirectionsService {
         durationSeconds: (r['duration'] as num?)?.round() ?? 0,
         summary: 'via roads',
       );
-    } catch (_) {
+    } catch (e) {
+      print('OSRM Routing Error: $e');
       return null;
     }
   }

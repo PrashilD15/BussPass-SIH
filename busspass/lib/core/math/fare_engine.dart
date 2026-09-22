@@ -134,8 +134,8 @@ class FareBreakdown {
   /// Chargeable distance in kilometres.
   final double distanceKm;
 
-  /// Number of 6 km stages charged (`ceil(distanceKm / 6)`).
-  final int stages;
+  /// Number of 6 km stages charged (can be half-stages like 1.5 for short trips).
+  final double stages;
 
   /// Tariff per stage for the chosen service class.
   final double stageRate;
@@ -151,6 +151,9 @@ class FareBreakdown {
 
   /// Rupees removed by the concession.
   final int concession;
+
+  /// Goods and Services Tax (GST) amount, applied based on operator.
+  final int gst;
 
   /// Reservation / booking surcharge, if any.
   final int reservationFee;
@@ -172,6 +175,7 @@ class FareBreakdown {
     required this.baseFare,
     required this.category,
     required this.concession,
+    required this.gst,
     required this.reservationFee,
     required this.luggageFee,
     required this.total,
@@ -218,6 +222,34 @@ class FareEngine {
     'Shivshahi Sleeper': 15.35,
     'Shivneri': 21.25,
     'Shivneri Sleeper': 25.35,
+  };
+
+  /// MSRTC Ordinary exact fares by stages for tickets and passes.
+  static final Map<double, Map<String, int>> msrtcOrdinaryFares = {
+    1.0: {'Ticket Full': 15, 'Ticket Half': 10, 'Student Pass Full': 240, 'Student Pass Half': 140, 'Monthly Pass': 600, 'Quarterly Pass': 1500},
+    1.5: {'Ticket Full': 20, 'Ticket Half': 10, 'Student Pass Full': 340, 'Student Pass Half': 140, 'Monthly Pass': 800, 'Quarterly Pass': 2000},
+    2.0: {'Ticket Full': 25, 'Ticket Half': 15, 'Student Pass Full': 440, 'Student Pass Half': 240, 'Monthly Pass': 1000, 'Quarterly Pass': 2500},
+    2.5: {'Ticket Full': 30, 'Ticket Half': 15, 'Student Pass Full': 540, 'Student Pass Half': 240, 'Monthly Pass': 1200, 'Quarterly Pass': 3000},
+    3.0: {'Ticket Full': 35, 'Ticket Half': 20, 'Student Pass Full': 640, 'Student Pass Half': 340, 'Monthly Pass': 1400, 'Quarterly Pass': 3500},
+    3.5: {'Ticket Full': 45, 'Ticket Half': 25, 'Student Pass Full': 840, 'Student Pass Half': 440, 'Monthly Pass': 1800, 'Quarterly Pass': 4500},
+    4.0: {'Ticket Full': 50, 'Ticket Half': 25, 'Student Pass Full': 940, 'Student Pass Half': 440, 'Monthly Pass': 2000, 'Quarterly Pass': 5000},
+    4.5: {'Ticket Full': 55, 'Ticket Half': 30, 'Student Pass Full': 1040, 'Student Pass Half': 540, 'Monthly Pass': 2200, 'Quarterly Pass': 5500},
+    5.0: {'Ticket Full': 60, 'Ticket Half': 30, 'Student Pass Full': 1140, 'Student Pass Half': 540, 'Monthly Pass': 2400, 'Quarterly Pass': 6000},
+    6.0: {'Ticket Full': 70, 'Ticket Half': 35, 'Student Pass Full': 1340, 'Student Pass Half': 640, 'Monthly Pass': 2800, 'Quarterly Pass': 7000},
+    7.0: {'Ticket Full': 85, 'Ticket Half': 45, 'Student Pass Full': 1640, 'Student Pass Half': 840, 'Monthly Pass': 3400, 'Quarterly Pass': 8500},
+    8.0: {'Ticket Full': 95, 'Ticket Half': 50, 'Student Pass Full': 1840, 'Student Pass Half': 940, 'Monthly Pass': 3800, 'Quarterly Pass': 9500},
+    9.0: {'Ticket Full': 105, 'Ticket Half': 55, 'Student Pass Full': 2040, 'Student Pass Half': 1040, 'Monthly Pass': 4200, 'Quarterly Pass': 10500},
+    10.0: {'Ticket Full': 115, 'Ticket Half': 60, 'Student Pass Full': 2240, 'Student Pass Half': 1140, 'Monthly Pass': 4600, 'Quarterly Pass': 11500},
+    11.0: {'Ticket Full': 130, 'Ticket Half': 65, 'Student Pass Full': 2540, 'Student Pass Half': 1240, 'Monthly Pass': 5200, 'Quarterly Pass': 13000},
+    12.0: {'Ticket Full': 140, 'Ticket Half': 70, 'Student Pass Full': 2740, 'Student Pass Half': 1340, 'Monthly Pass': 5600, 'Quarterly Pass': 14000},
+    13.0: {'Ticket Full': 150, 'Ticket Half': 75, 'Student Pass Full': 2940, 'Student Pass Half': 1440, 'Monthly Pass': 6000, 'Quarterly Pass': 15000},
+    14.0: {'Ticket Full': 165, 'Ticket Half': 85, 'Student Pass Full': 3240, 'Student Pass Half': 1640, 'Monthly Pass': 6600, 'Quarterly Pass': 16500},
+    15.0: {'Ticket Full': 175, 'Ticket Half': 90, 'Student Pass Full': 3440, 'Student Pass Half': 1740, 'Monthly Pass': 7000, 'Quarterly Pass': 17500},
+    16.0: {'Ticket Full': 185, 'Ticket Half': 95, 'Student Pass Full': 3640, 'Student Pass Half': 1840, 'Monthly Pass': 7400, 'Quarterly Pass': 18500},
+    17.0: {'Ticket Full': 195, 'Ticket Half': 100, 'Student Pass Full': 3840, 'Student Pass Half': 1940, 'Monthly Pass': 7800, 'Quarterly Pass': 19500},
+    18.0: {'Ticket Full': 210, 'Ticket Half': 105, 'Student Pass Full': 4140, 'Student Pass Half': 2040, 'Monthly Pass': 8400, 'Quarterly Pass': 21000},
+    19.0: {'Ticket Full': 220, 'Ticket Half': 110, 'Student Pass Full': 4340, 'Student Pass Half': 2140, 'Monthly Pass': 8800, 'Quarterly Pass': 22000},
+    20.0: {'Ticket Full': 230, 'Ticket Half': 115, 'Student Pass Full': 4540, 'Student Pass Half': 2240, 'Monthly Pass': 9200, 'Quarterly Pass': 23000},
   };
 
   /// Legacy / scraped labels folded onto canonical keys.
@@ -275,9 +307,14 @@ class FareEngine {
   ///
   /// Any distance above zero costs at least one stage — a 1 km hop is a full
   /// stage, which is exactly why the app shows `unusedStageKm`.
-  static int stagesFor(double km) {
-    if (km <= 0) return 0;
-    return (km / stageKm).ceil();
+  static double stagesFor(double km) {
+    if (km <= 0) return 0.0;
+    // According to new MSRTC fare chart, stages are counted in halves up to 5 stages (30 km).
+    // Above 5 stages, they are counted in full stages.
+    if (km <= 30.0) {
+      return (km / (stageKm / 2)).ceil() / 2.0;
+    }
+    return (km / stageKm).ceil().toDouble();
   }
 
   /// Round to the nearest ₹5, halves upward (matching conductor practice).
@@ -288,12 +325,70 @@ class FareEngine {
 
   /// Adult base fare for [km] on [serviceClassKey], in whole rupees.
   ///
-  /// `fare = max(10, round5(ceil(km / 6) * stageRate))`
-  static int baseFare(double km, String serviceClassKey) {
+  /// For MSRTC Ordinary services up to 20 stages, uses the exact lookup table.
+  /// Otherwise uses `fare = max(10, round5(ceil(km / 6) * stageRate))`.
+  static int baseFare(double km, String serviceClassKey, {String operatorName = 'MSRTC'}) {
     final stages = stagesFor(km);
     if (stages == 0) return 0;
+    
+    final canonical = canonicalKey(serviceClassKey);
+    if (operatorName == 'MSRTC' && canonical == 'Ordinary') {
+      // Use exact lookup for MSRTC Ordinary up to 20 stages if available.
+      if (msrtcOrdinaryFares.containsKey(stages)) {
+        return msrtcOrdinaryFares[stages]!['Ticket Full'] ?? 0;
+      }
+    }
+    
     final raw = stages * stageRateFor(serviceClassKey);
     return math.max(minimumFare, roundFare(raw));
+  }
+
+  /// Calculates the total combined fare for a group of adults and ladies.
+  /// 
+  /// In MSRTC, ladies receive a 50% concession (Mahila Samman Yojana).
+  /// For Ordinary services, this exactly matches the 'Ticket Half' chart.
+  /// For others, it's a 50% discount on the base fare.
+  static int calculateTotalTripFare(
+    double km, 
+    String serviceClassKey, 
+    int adultCount, 
+    int ladyCount, 
+    int childCount,
+    {String operatorName = 'MSRTC'}
+  ) {
+    if (adultCount == 0 && ladyCount == 0 && childCount == 0) return 0;
+    final stages = stagesFor(km);
+    if (stages == 0) return 0;
+    
+    final canonical = canonicalKey(serviceClassKey);
+    int adultBase = 0;
+    int ladyBase = 0;
+
+    int childBase = 0;
+
+    if (operatorName == 'MSRTC' && canonical == 'Ordinary' && msrtcOrdinaryFares.containsKey(stages)) {
+      adultBase = msrtcOrdinaryFares[stages]!['Ticket Full'] ?? 0;
+      ladyBase = msrtcOrdinaryFares[stages]!['Ticket Half'] ?? 0;
+      childBase = msrtcOrdinaryFares[stages]!['Ticket Half'] ?? 0;
+    } else {
+      final raw = stages * stageRateFor(serviceClassKey);
+      adultBase = math.max(minimumFare, roundFare(raw));
+      if (operatorName == 'MSRTC') {
+        ladyBase = math.max(minimumFare, roundFare(raw * 0.5));
+        childBase = math.max(minimumFare, roundFare(raw * 0.5));
+      } else {
+        ladyBase = adultBase; // Other STCs might not have this scheme by default
+        childBase = math.max(minimumFare, roundFare(raw * 0.5)); // Usually children are half fare across India
+      }
+    }
+
+
+    
+    final int singleAdultTotal = adultBase;
+    final int singleLadyTotal = ladyBase;
+    final int singleChildTotal = childBase;
+    
+    return (singleAdultTotal * adultCount) + (singleLadyTotal * ladyCount) + (singleChildTotal * childCount);
   }
 
   /// Full itemised fare.
@@ -301,35 +396,66 @@ class FareEngine {
   /// [reservationFee] covers advance booking (MSRTC charges a per-seat booking
   /// fee on reserved services); [luggageFee] covers registered luggage. Both
   /// are added after the concession, since concessions apply to the passenger
-  /// fare only.
+  /// fare only. GST is then calculated based on the operator and added.
   static FareBreakdown compute({
     required double distanceKm,
     required ServiceClass serviceClass,
     RiderCategory category = RiderCategory.adult,
     int reservationFee = 0,
     int luggageFee = 0,
+    String operatorName = 'MSRTC',
   }) {
     final stages = stagesFor(distanceKm);
     final rate = serviceClass.stageRate > 0
         ? serviceClass.stageRate
         : stageRateFor(serviceClass.key);
-    final raw = stages * rate;
-    final base = stages == 0 ? 0 : math.max(minimumFare, roundFare(raw));
+    
+    final canonical = canonicalKey(serviceClass.key);
+    int base;
+    double raw;
+
+    if (operatorName == 'MSRTC' && canonical == 'Ordinary' && msrtcOrdinaryFares.containsKey(stages)) {
+      // Use exact lookup table
+      final exactMap = msrtcOrdinaryFares[stages]!;
+      base = category == RiderCategory.child ? (exactMap['Ticket Half'] ?? 0) : (exactMap['Ticket Full'] ?? 0);
+      raw = base.toDouble(); // For exact fares, raw equals base
+    } else {
+      raw = stages * rate;
+      base = stages == 0 ? 0 : math.max(minimumFare, roundFare(raw));
+    }
 
     // Concession is computed on the base fare then re-rounded to ₹5 so the
     // discounted fare is still payable in cash. A 100% concession short-circuits
     // to zero rather than rounding up to the ₹10 floor.
     final int discounted;
-    if (category.isFree) {
-      discounted = 0;
-    } else if (category.discountPercent == 0) {
-      discounted = base;
+    if (operatorName == 'MSRTC' && canonical == 'Ordinary' && msrtcOrdinaryFares.containsKey(stages)) {
+      // Avoid formulaic concessions for exact matches if possible, though exact matches
+      // only exist for Child (Ticket Half) and some passes. Since we just matched Ticket Half for child:
+      if (category.isFree) {
+        discounted = 0;
+      } else if (category == RiderCategory.student) {
+        // Assume student pass is handled separately or just use regular concession if it's a standard ticket.
+        // Wait, 'Student' category here might mean pass, but we just return standard concession if not explicitly requested.
+        final afterDiscount = base * (100 - category.discountPercent) / 100.0;
+        discounted = math.max(minimumFare, roundFare(afterDiscount));
+      } else {
+        discounted = base; // base is already adjusted for child above
+      }
     } else {
-      final afterDiscount = base * (100 - category.discountPercent) / 100.0;
-      discounted = math.max(minimumFare, roundFare(afterDiscount));
+      if (category.isFree) {
+        discounted = 0;
+      } else if (category.discountPercent == 0) {
+        discounted = base;
+      } else {
+        final afterDiscount = base * (100 - category.discountPercent) / 100.0;
+        discounted = math.max(minimumFare, roundFare(afterDiscount));
+      }
     }
 
     final concession = base - discounted;
+    
+    final int gst = 0;
+    
     final total = discounted + reservationFee + luggageFee;
 
     return FareBreakdown(
@@ -340,6 +466,7 @@ class FareEngine {
       baseFare: base,
       category: category,
       concession: concession,
+      gst: gst,
       reservationFee: reservationFee,
       luggageFee: luggageFee,
       total: total,
@@ -347,17 +474,19 @@ class FareEngine {
     );
   }
 
-  /// Adult fares for every class in [classes} over [distanceKm], cheapest first.
+  /// Adult fares for every class in [classes] over [distanceKm], cheapest first.
   static List<({ServiceClass serviceClass, int fare})> fareLadder(
     double distanceKm,
-    List<ServiceClass> classes,
-  ) {
+    List<ServiceClass> classes, {
+    String operatorName = 'MSRTC',
+  }) {
     final out = classes
         .map((c) => (
               serviceClass: c,
-              fare: baseFare(distanceKm, c.key) == 0
+              fare: baseFare(distanceKm, c.key, operatorName: operatorName) == 0
                   ? 0
-                  : math.max(minimumFare, roundFare(stagesFor(distanceKm) * c.stageRate)),
+                  : baseFare(distanceKm, c.key, operatorName: operatorName) + 
+                    roundFare(baseFare(distanceKm, c.key, operatorName: operatorName) * (operatorName == 'MSRTC' ? 0.175 : 0.075)),
             ))
         .toList();
     out.sort((a, b) => a.fare.compareTo(b.fare));

@@ -37,6 +37,9 @@ class LocalStore {
   static const String _kSettings = '$_v.settings';
   static const String _kOnboarded = '$_v.onboarded';
   static const String _kActiveTicket = '$_v.activeTicket';
+  static const String _kSelectedSTC = '$_v.selectedSTC';
+  static const String _kOverlayCache = '$_v.overlayCache';
+  static const String _kOverlayCachedAt = '$_v.overlayCachedAt';
 
   /// Cap on retained recent searches.
   static const int _recentSearchLimit = 12;
@@ -245,6 +248,45 @@ class LocalStore {
 
   Future<void> setOnboarded(bool value) => _prefs.setBool(_kOnboarded, value);
 
+  // ── STC selection ─────────────────────────────────────────────────────
+
+  /// The state the rider explicitly chose, or null to follow GPS detection.
+  String? readSelectedSTC() => _prefs.getString(_kSelectedSTC);
+
+  Future<void> writeSelectedSTC(String? stcCode) async {
+    if (stcCode == null) {
+      await _prefs.remove(_kSelectedSTC);
+    } else {
+      await _prefs.setString(_kSelectedSTC, stcCode);
+    }
+  }
+
+  // ── Network overlay cache ──────────────────────────────────────────────
+  //
+  // Persists the last successful Firestore overlay so a cold start can serve
+  // live data instantly and offline, and so a fresh cache lets the app skip the
+  // Firestore fetch entirely — fewer reads, lower cost, faster launch.
+
+  /// The cached overlay JSON, or null if none has been stored.
+  String? readOverlayCache() => _prefs.getString(_kOverlayCache);
+
+  /// When the overlay cache was written, or null.
+  DateTime? readOverlayCachedAt() {
+    final raw = _prefs.getString(_kOverlayCachedAt);
+    return raw == null ? null : DateTime.tryParse(raw);
+  }
+
+  Future<void> writeOverlayCache(String json) async {
+    await _prefs.setString(_kOverlayCache, json);
+    await _prefs.setString(
+        _kOverlayCachedAt, DateTime.now().toIso8601String());
+  }
+
+  Future<void> clearOverlayCache() async {
+    await _prefs.remove(_kOverlayCache);
+    await _prefs.remove(_kOverlayCachedAt);
+  }
+
   /// Wipe everything. Used by "clear local data" in settings, and by sign-out.
   Future<void> clearAll() async {
     for (final key in [
@@ -297,6 +339,12 @@ class AppSettings {
   final String emergencyContactName;
   final String emergencyContactPhone;
 
+  /// User consent for data collection (e.g. backend sync of recent searches).
+  final bool dataCollectionConsent;
+
+  /// Whether the user has seen the privacy consent dialog.
+  final bool hasSeenPrivacyConsent;
+
   const AppSettings({
     required this.localeCode,
     required this.themeMode,
@@ -310,6 +358,8 @@ class AppSettings {
     required this.largeText,
     required this.emergencyContactName,
     required this.emergencyContactPhone,
+    required this.dataCollectionConsent,
+    required this.hasSeenPrivacyConsent,
   });
 
   static const AppSettings defaults = AppSettings(
@@ -325,6 +375,8 @@ class AppSettings {
     largeText: false,
     emergencyContactName: '',
     emergencyContactPhone: '',
+    dataCollectionConsent: false,
+    hasSeenPrivacyConsent: false,
   );
 
   bool get hasEmergencyContact => emergencyContactPhone.trim().isNotEmpty;
@@ -342,6 +394,8 @@ class AppSettings {
     bool? largeText,
     String? emergencyContactName,
     String? emergencyContactPhone,
+    bool? dataCollectionConsent,
+    bool? hasSeenPrivacyConsent,
   }) =>
       AppSettings(
         localeCode: localeCode ?? this.localeCode,
@@ -359,6 +413,10 @@ class AppSettings {
             emergencyContactName ?? this.emergencyContactName,
         emergencyContactPhone:
             emergencyContactPhone ?? this.emergencyContactPhone,
+        dataCollectionConsent:
+            dataCollectionConsent ?? this.dataCollectionConsent,
+        hasSeenPrivacyConsent:
+            hasSeenPrivacyConsent ?? this.hasSeenPrivacyConsent,
       );
 
   Map<String, dynamic> toJson() => {
@@ -374,6 +432,8 @@ class AppSettings {
         'large_text': largeText,
         'emergency_contact_name': emergencyContactName,
         'emergency_contact_phone': emergencyContactPhone,
+        'data_collection_consent': dataCollectionConsent,
+        'has_seen_privacy_consent': hasSeenPrivacyConsent,
       };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
@@ -398,6 +458,8 @@ class AppSettings {
             json['emergency_contact_name'] as String? ?? '',
         emergencyContactPhone:
             json['emergency_contact_phone'] as String? ?? '',
+        dataCollectionConsent: json['data_collection_consent'] as bool? ?? false,
+        hasSeenPrivacyConsent: json['has_seen_privacy_consent'] as bool? ?? false,
       );
 }
 

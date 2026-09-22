@@ -17,12 +17,12 @@
  *                        lat: number, lng: number, district: string} | null>}
  */
 const DEPOT_ORIGINS = {
-  // NOTE: "akola-msrtc" in the source data is Akole (Ahmednagar district), not
+  // NOTE: "akola-msrtc" in the source data is Akole (Ahilyanagar district), not
   // Akola city — its timetable is dominated by short hops to Rajur (20 km),
   // Sangamner and Ganore, which are all Akole-taluka villages.
   'akola-msrtc': {
     id: 'akole', name: 'Akole Bus Stand', city: 'Akole', depot: 'Akole',
-    lat: 19.5340, lng: 73.9328, district: 'Ahmednagar',
+    lat: 19.5340, lng: 73.9328, district: 'Ahilyanagar',
   },
   'igatpuri': {
     id: 'igatpuri', name: 'Igatpuri Bus Stand', city: 'Igatpuri', depot: 'Igatpuri',
@@ -30,7 +30,7 @@ const DEPOT_ORIGINS = {
   },
   'jamkhed': {
     id: 'jamkhed', name: 'Jamkhed Bus Stand', city: 'Jamkhed', depot: 'Jamkhed',
-    lat: 18.6469, lng: 75.3167, district: 'Ahmednagar',
+    lat: 18.6469, lng: 75.3167, district: 'Ahilyanagar',
   },
   'kalwan': {
     id: 'kalwan', name: 'Kalwan Bus Stand', city: 'Kalwan', depot: 'Kalwan',
@@ -38,7 +38,7 @@ const DEPOT_ORIGINS = {
   },
   'kopargaon': {
     id: 'kopargaon', name: 'Kopargaon Bus Stand', city: 'Kopargaon', depot: 'Kopargaon',
-    lat: 19.8820, lng: 74.4764, district: 'Ahmednagar',
+    lat: 19.8820, lng: 74.4764, district: 'Ahilyanagar',
   },
   'lasalgaon': {
     id: 'lasalgaon', name: 'Lasalgaon Bus Stand', city: 'Lasalgaon', depot: 'Lasalgaon',
@@ -67,15 +67,15 @@ const DEPOT_ORIGINS = {
   },
   'newasa': {
     id: 'nevasa', name: 'Nevasa Bus Stand', city: 'Nevasa', depot: 'Nevasa',
-    lat: 19.5400, lng: 74.9300, district: 'Ahmednagar',
+    lat: 19.5400, lng: 74.9300, district: 'Ahilyanagar',
   },
   'parner': {
     id: 'parner', name: 'Parner Bus Stand', city: 'Parner', depot: 'Parner',
-    lat: 19.0022, lng: 74.4386, district: 'Ahmednagar',
+    lat: 19.0022, lng: 74.4386, district: 'Ahilyanagar',
   },
   'pathardi': {
     id: 'pathardi', name: 'Pathardi Bus Stand', city: 'Pathardi', depot: 'Pathardi',
-    lat: 19.1725, lng: 75.1783, district: 'Ahmednagar',
+    lat: 19.1725, lng: 75.1783, district: 'Ahilyanagar',
   },
   // Scraped help article, not a depot.
   'pet-how-to-book-msrtc-bus-ticket-online': null,
@@ -86,7 +86,7 @@ const DEPOT_ORIGINS = {
   },
   'sangamner': {
     id: 'sangamner', name: 'Sangamner Bus Stand', city: 'Sangamner', depot: 'Sangamner',
-    lat: 19.5648, lng: 74.2115, district: 'Ahmednagar',
+    lat: 19.5648, lng: 74.2115, district: 'Ahilyanagar',
   },
   'satana': {
     id: 'satana', name: 'Satana (Baglan) Bus Stand', city: 'Satana', depot: 'Satana',
@@ -94,27 +94,27 @@ const DEPOT_ORIGINS = {
   },
   'shevgaon': {
     id: 'shevgaon', name: 'Shevgaon Bus Stand', city: 'Shevgaon', depot: 'Shevgaon',
-    lat: 19.3500, lng: 75.2300, district: 'Ahmednagar',
+    lat: 19.3500, lng: 75.2300, district: 'Ahilyanagar',
   },
   'shirdi': {
     id: 'shirdi', name: 'Shirdi Bus Stand', city: 'Shirdi', depot: 'Shirdi',
-    lat: 19.7667, lng: 74.4764, district: 'Ahmednagar',
+    lat: 19.7667, lng: 74.4764, district: 'Ahilyanagar',
   },
   'shrigonda': {
     id: 'shrigonda', name: 'Shrigonda Bus Stand', city: 'Shrigonda', depot: 'Shrigonda',
-    lat: 18.6167, lng: 74.7000, district: 'Ahmednagar',
+    lat: 18.6167, lng: 74.7000, district: 'Ahilyanagar',
   },
   'shrirampur': {
     id: 'shrirampur', name: 'Shrirampur Bus Stand', city: 'Shrirampur', depot: 'Shrirampur',
-    lat: 19.6200, lng: 74.6600, district: 'Ahmednagar',
+    lat: 19.6200, lng: 74.6600, district: 'Ahilyanagar',
   },
   'sinnar': {
     id: 'sinnar', name: 'Sinnar Bus Stand', city: 'Sinnar', depot: 'Sinnar',
     lat: 19.8500, lng: 74.0000, district: 'Nashik',
   },
   'tarakpur': {
-    id: 'ahmednagar', name: 'Ahmednagar Bus Stand', city: 'Ahmednagar', depot: 'Tarakpur',
-    lat: 19.0948, lng: 74.7480, district: 'Ahmednagar',
+    id: 'ahmednagar', name: 'Ahilyanagar Bus Stand', city: 'Ahilyanagar', depot: 'Tarakpur',
+    lat: 19.0948, lng: 74.7480, district: 'Ahilyanagar',
   },
   'yeola-msrtc-bus-timings': {
     id: 'yeola', name: 'Yeola Bus Stand', city: 'Yeola', depot: 'Yeola',

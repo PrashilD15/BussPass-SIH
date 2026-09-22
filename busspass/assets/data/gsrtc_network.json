@@ -1,0 +1,124 @@
+{
+  "stc": "GSRTC",
+  "state": "Gujarat",
+  "stops": [
+    {"id": "ahmedabad-st", "name": "Ahmedabad ST Bus Stand (Geeta Mandir)", "city": "Ahmedabad", "depot": "Ahmedabad", "district": "Ahmedabad", "lat": 23.0225, "lng": 72.5714, "tier": 3},
+    {"id": "surat-st", "name": "Surat ST Bus Stand", "city": "Surat", "depot": "Surat", "district": "Surat", "lat": 21.1702, "lng": 72.8311, "tier": 3},
+    {"id": "vadodara-st", "name": "Vadodara ST Bus Stand", "city": "Vadodara", "depot": "Vadodara", "district": "Vadodara", "lat": 22.3072, "lng": 73.1812, "tier": 3},
+    {"id": "rajkot-st", "name": "Rajkot ST Bus Stand", "city": "Rajkot", "depot": "Rajkot", "district": "Rajkot", "lat": 22.3039, "lng": 70.8022, "tier": 3},
+    {"id": "gandhinagar-st", "name": "Gandhinagar ST Bus Stand (Sector 21)", "city": "Gandhinagar", "depot": "Gandhinagar", "district": "Gandhinagar", "lat": 23.2156, "lng": 72.6369, "tier": 3},
+    {"id": "bhavnagar-st", "name": "Bhavnagar ST Bus Stand", "city": "Bhavnagar", "depot": "Bhavnagar", "district": "Bhavnagar", "lat": 21.7645, "lng": 72.1519, "tier": 2},
+    {"id": "jamnagar-st", "name": "Jamnagar ST Bus Stand", "city": "Jamnagar", "depot": "Jamnagar", "district": "Jamnagar", "lat": 22.4707, "lng": 70.0577, "tier": 2},
+    {"id": "junagadh-st", "name": "Junagadh ST Bus Stand", "city": "Junagadh", "depot": "Junagadh", "district": "Junagadh", "lat": 21.5222, "lng": 70.4579, "tier": 2},
+    {"id": "anand-st", "name": "Anand ST Bus Stand", "city": "Anand", "depot": "Anand", "district": "Anand", "lat": 22.5645, "lng": 72.9289, "tier": 2},
+    {"id": "mehsana-st", "name": "Mehsana ST Bus Stand", "city": "Mehsana", "depot": "Mehsana", "district": "Mehsana", "lat": 23.5979, "lng": 72.3693, "tier": 2},
+    {"id": "navsari-st", "name": "Navsari ST Bus Stand", "city": "Navsari", "depot": "Navsari", "district": "Navsari", "lat": 20.9467, "lng": 72.9520, "tier": 2},
+    {"id": "valsad-st", "name": "Valsad ST Bus Stand", "city": "Valsad", "depot": "Valsad", "district": "Valsad", "lat": 20.6177, "lng": 72.9331, "tier": 2},
+    {"id": "palanpur-st", "name": "Palanpur ST Bus Stand", "city": "Palanpur", "depot": "Palanpur", "district": "Banaskantha", "lat": 24.1721, "lng": 72.4381, "tier": 2},
+    {"id": "himatnagar-st", "name": "Himatnagar ST Bus Stand", "city": "Himatnagar", "depot": "Himatnagar", "district": "Sabarkantha", "lat": 23.5987, "lng": 72.9703, "tier": 2},
+    {"id": "amreli-st", "name": "Amreli ST Bus Stand", "city": "Amreli", "depot": "Amreli", "district": "Amreli", "lat": 21.6012, "lng": 71.2214, "tier": 2}
+  ],
+  "routes": [
+    {
+      "id": "gsrtc-ahm-surat-001",
+      "name": "Ahmedabad – Surat Express",
+      "operator": "GSRTC",
+      "corridor": true,
+      "origin_stop_id": "ahmedabad-st",
+      "destination_stop_id": "surat-st",
+      "origin_city": "Ahmedabad",
+      "destination_city": "Surat",
+      "distance_km": 263,
+      "bus_types": ["Express", "Volvo AC"],
+      "stops": [
+        {"stop_id": "ahmedabad-st", "name": "Ahmedabad ST Bus Stand (Geeta Mandir)", "city": "Ahmedabad", "lat": 23.0225, "lng": 72.5714, "seq": 1, "cum_km": 0},
+        {"stop_id": "anand-st", "name": "Anand ST Bus Stand", "city": "Anand", "lat": 22.5645, "lng": 72.9289, "seq": 2, "cum_km": 69},
+        {"stop_id": "vadodara-st", "name": "Vadodara ST Bus Stand", "city": "Vadodara", "lat": 22.3072, "lng": 73.1812, "seq": 3, "cum_km": 109},
+        {"stop_id": "navsari-st", "name": "Navsari ST Bus Stand", "city": "Navsari", "lat": 20.9467, "lng": 72.9520, "seq": 4, "cum_km": 228},
+        {"stop_id": "surat-st", "name": "Surat ST Bus Stand", "city": "Surat", "lat": 21.1702, "lng": 72.8311, "seq": 5, "cum_km": 263}
+      ]
+    },
+    {
+      "id": "gsrtc-ahm-rajkot-001",
+      "name": "Ahmedabad – Rajkot Express",
+      "operator": "GSRTC",
+      "corridor": true,
+      "origin_stop_id": "ahmedabad-st",
+      "destination_stop_id": "rajkot-st",
+      "origin_city": "Ahmedabad",
+      "destination_city": "Rajkot",
+      "distance_km": 216,
+      "bus_types": ["Express", "Volvo AC"],
+      "stops": [
+        {"stop_id": "ahmedabad-st", "name": "Ahmedabad ST Bus Stand (Geeta Mandir)", "city": "Ahmedabad", "lat": 23.0225, "lng": 72.5714, "seq": 1, "cum_km": 0},
+        {"stop_id": "rajkot-st", "name": "Rajkot ST Bus Stand", "city": "Rajkot", "lat": 22.3039, "lng": 70.8022, "seq": 2, "cum_km": 216}
+      ]
+    },
+    {
+      "id": "gsrtc-ahm-gandhinagar-001",
+      "name": "Ahmedabad – Gandhinagar Shuttle",
+      "operator": "GSRTC",
+      "corridor": true,
+      "origin_stop_id": "ahmedabad-st",
+      "destination_stop_id": "gandhinagar-st",
+      "origin_city": "Ahmedabad",
+      "destination_city": "Gandhinagar",
+      "distance_km": 28,
+      "bus_types": ["Express", "Ordinary"],
+      "stops": [
+        {"stop_id": "ahmedabad-st", "name": "Ahmedabad ST Bus Stand (Geeta Mandir)", "city": "Ahmedabad", "lat": 23.0225, "lng": 72.5714, "seq": 1, "cum_km": 0},
+        {"stop_id": "gandhinagar-st", "name": "Gandhinagar ST Bus Stand (Sector 21)", "city": "Gandhinagar", "lat": 23.2156, "lng": 72.6369, "seq": 2, "cum_km": 28}
+      ]
+    },
+    {
+      "id": "gsrtc-rajkot-jamnagar-001",
+      "name": "Rajkot – Jamnagar Express",
+      "operator": "GSRTC",
+      "corridor": true,
+      "origin_stop_id": "rajkot-st",
+      "destination_stop_id": "jamnagar-st",
+      "origin_city": "Rajkot",
+      "destination_city": "Jamnagar",
+      "distance_km": 76,
+      "bus_types": ["Express", "Ordinary"],
+      "stops": [
+        {"stop_id": "rajkot-st", "name": "Rajkot ST Bus Stand", "city": "Rajkot", "lat": 22.3039, "lng": 70.8022, "seq": 1, "cum_km": 0},
+        {"stop_id": "jamnagar-st", "name": "Jamnagar ST Bus Stand", "city": "Jamnagar", "lat": 22.4707, "lng": 70.0577, "seq": 2, "cum_km": 76}
+      ]
+    },
+    {
+      "id": "gsrtc-ahm-vadodara-001",
+      "name": "Ahmedabad – Vadodara Express",
+      "operator": "GSRTC",
+      "corridor": true,
+      "origin_stop_id": "ahmedabad-st",
+      "destination_stop_id": "vadodara-st",
+      "origin_city": "Ahmedabad",
+      "destination_city": "Vadodara",
+      "distance_km": 109,
+      "bus_types": ["Express", "Volvo AC"],
+      "stops": [
+        {"stop_id": "ahmedabad-st", "name": "Ahmedabad ST Bus Stand (Geeta Mandir)", "city": "Ahmedabad", "lat": 23.0225, "lng": 72.5714, "seq": 1, "cum_km": 0},
+        {"stop_id": "anand-st", "name": "Anand ST Bus Stand", "city": "Anand", "lat": 22.5645, "lng": 72.9289, "seq": 2, "cum_km": 69},
+        {"stop_id": "vadodara-st", "name": "Vadodara ST Bus Stand", "city": "Vadodara", "lat": 22.3072, "lng": 73.1812, "seq": 3, "cum_km": 109}
+      ]
+    },
+    {
+      "id": "gsrtc-surat-valsad-001",
+      "name": "Surat – Valsad Express",
+      "operator": "GSRTC",
+      "corridor": true,
+      "origin_stop_id": "surat-st",
+      "destination_stop_id": "valsad-st",
+      "origin_city": "Surat",
+      "destination_city": "Valsad",
+      "distance_km": 74,
+      "bus_types": ["Express", "Ordinary"],
+      "stops": [
+        {"stop_id": "surat-st", "name": "Surat ST Bus Stand", "city": "Surat", "lat": 21.1702, "lng": 72.8311, "seq": 1, "cum_km": 0},
+        {"stop_id": "navsari-st", "name": "Navsari ST Bus Stand", "city": "Navsari", "lat": 20.9467, "lng": 72.9520, "seq": 2, "cum_km": 40},
+        {"stop_id": "valsad-st", "name": "Valsad ST Bus Stand", "city": "Valsad", "lat": 20.6177, "lng": 72.9331, "seq": 3, "cum_km": 74}
+      ]
+    }
+  ]
+}

@@ -8,9 +8,11 @@ import 'package:busspass/theme/app_theme.dart';
 import 'package:busspass/theme/widgets/app_widgets.dart';
 import 'package:busspass/theme/widgets/brand_mark.dart';
 import 'package:busspass/features/onboarding/presentation/language_screen.dart';
+import 'package:busspass/features/onboarding/presentation/smart_splash_screen.dart';
 import 'package:busspass/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:busspass/data/providers/auth_provider.dart';
 import 'package:busspass/data/providers/app_providers.dart';
+import 'package:busspass/data/providers/state_provider.dart';
 import 'package:busspass/data/repositories/local_store.dart';
 
 void main() async {
@@ -51,6 +53,17 @@ class BussPassApp extends ConsumerWidget {
     final themeMode = ref.watch(
       settingsProvider.select((s) => s.themeMode),
     );
+    final largeText = ref.watch(
+      settingsProvider.select((s) => s.largeText),
+    );
+    final stc = ref.watch(effectiveSTCProvider);
+    final lightPalette = AppPalette.forSTC(stc.stcCode, Brightness.light);
+    final darkPalette = AppPalette.forSTC(stc.stcCode, Brightness.dark);
+
+    // Honour the reduce-motion preference app-wide: the shared stagger
+    // helpers no-op when it's on.
+    StaggerAnimation.enabled =
+        !ref.watch(settingsProvider.select((s) => s.reduceMotion));
 
     return MaterialApp(
       title: 'BussPass – Your Travel Partner',
@@ -58,13 +71,20 @@ class BussPassApp extends ConsumerWidget {
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
-      theme: buildLightTheme(),
-      darkTheme: buildDarkTheme(),
+      theme: buildLightTheme(lightPalette),
+      darkTheme: buildDarkTheme(darkPalette),
       themeMode: switch (themeMode) {
         AppThemeMode.light => ThemeMode.light,
         AppThemeMode.dark => ThemeMode.dark,
         AppThemeMode.system => ThemeMode.system,
       },
+      // The in-app "Larger text" accessibility preference rides on the
+      // platform textScaler so every textTheme role scales consistently.
+      builder: (context, child) => MediaQuery.withClampedTextScaling(
+        minScaleFactor: largeText ? 1.15 : 1.0,
+        maxScaleFactor: 1.4,
+        child: child ?? const SizedBox.shrink(),
+      ),
       home: const AuthWrapper(),
     );
   }
@@ -104,7 +124,19 @@ class AuthWrapper extends ConsumerWidget {
     return authState.when(
       data: (user) {
         if (user != null) {
-          return const DashboardScreen();
+          // Show smart splash first (state detection), then dashboard.
+          return SmartSplashScreen(
+            onReady: () {
+              // Navigate replacing the current route so back button doesn't
+              // return to the splash.
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(
+                  builder: (_) => const DashboardScreen(),
+                ),
+                (_) => false,
+              );
+            },
+          );
         }
         return const LanguageScreen();
       },

@@ -1,29 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:busspass/core/math/fare_engine.dart';
+import 'package:busspass/core/math/geo.dart';
 import 'package:busspass/core/math/journey_planner.dart';
 import 'package:busspass/core/math/schedule.dart';
 import 'package:busspass/data/models/network_models.dart';
+import 'package:busspass/data/models/ticket.dart';
 import 'package:busspass/data/providers/app_providers.dart';
+import 'package:busspass/data/providers/directions_provider.dart';
 import 'package:busspass/features/journey/presentation/live_navigation_screen.dart';
 import 'package:busspass/core/utils/bus_image_helper.dart';
+import 'package:busspass/core/ui/responsive_wrapper.dart';
 import 'package:busspass/core/theme/map_style.dart';
+import 'package:busspass/core/utils/map_marker_utils.dart';
 import 'package:busspass/theme/app_colors.dart';
 import 'package:busspass/theme/app_theme.dart';
 import 'package:busspass/theme/widgets/app_widgets.dart';
+import 'package:busspass/features/journey/presentation/walk_to_stand_screen.dart';
+import 'package:geolocator/geolocator.dart' as geo;
+import 'package:busspass/theme/widgets/brand_mark.dart';
 
 /// Journey results for an origin/destination pair, backed by the offline
 /// transit network and the graph planner.
 class JourneyDetailsScreen extends ConsumerStatefulWidget {
   final String originId;
   final String destinationId;
+  final DateTime? departAfter;
+  final int adultCount;
+  final int ladyCount;
+  final int childCount;
 
   const JourneyDetailsScreen({
     super.key,
     required this.originId,
     required this.destinationId,
+    this.departAfter,
+    this.adultCount = 1,
+    this.ladyCount = 0,
+    this.childCount = 0,
   });
 
   @override
@@ -41,17 +58,21 @@ class _JourneyDetailsScreenState extends ConsumerState<JourneyDetailsScreen> {
     final now = ref.watch(clockProvider);
     final preference = ref.watch(journeyPreferenceProvider);
 
-    return originAsync.when(
-      loading: () => const _LoadingScaffold(),
-      error: (e, _) => _ErrorScaffold(message: '$e'),
-      data: (origin) => destAsync.when(
+    return ResponsiveWrapper(
+      child: originAsync.when(
         loading: () => const _LoadingScaffold(),
         error: (e, _) => _ErrorScaffold(message: '$e'),
-        data: (destination) {
-          if (origin == null || destination == null) {
-            return _ErrorScaffold(message: 'Stop not found');
-          }
-          return _buildContent(origin, destination, now, preference);
+        data: (origin) {
+          return destAsync.when(
+            loading: () => const _LoadingScaffold(),
+            error: (e, _) => _ErrorScaffold(message: '$e'),
+            data: (destination) {
+              if (origin == null || destination == null) {
+                return _ErrorScaffold(message: 'Stop not found');
+              }
+              return _buildContent(origin, destination, now, preference);
+            },
+          );
         },
       ),
     );
@@ -62,18 +83,25 @@ class _JourneyDetailsScreenState extends ConsumerState<JourneyDetailsScreen> {
     final query = JourneyQuery(
       originId: origin.id,
       destinationId: destination.id,
-      departAfter: now,
+      departAfter: widget.departAfter ?? now,
       preference: preference,
+      adultCount: widget.adultCount,
+      ladyCount: widget.ladyCount,
+      childCount: widget.childCount,
     );
     final plansAsync = ref.watch(journeyPlanProvider(query));
+    final palette = context.palette;
 
     return Scaffold(
-      backgroundColor: AppColors.canvas,
+      backgroundColor: palette.canvas,
       body: plansAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.brand),
+        loading: () => const Center(child: BrandLoader()),
+        error: (err, stack) => ErrorState(
+          message: 'We could not plan this journey right now. '
+              'Please try again in a moment.',
+          detail: err,
+          onRetry: () => ref.invalidate(journeyPlanProvider(query)),
         ),
-        error: (err, stack) => Center(child: Text('Error: $err')),
         data: (itineraries) {
           if (itineraries.isEmpty) {
             return _NoRouteFound(
@@ -92,16 +120,16 @@ class _JourneyDetailsScreenState extends ConsumerState<JourneyDetailsScreen> {
                   SliverAppBar(
                     expandedHeight: 260,
                     pinned: true,
-                    backgroundColor: AppColors.brand,
+                    backgroundColor: palette.brand,
                     leading: Container(
                       margin: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(
-                        color: AppColors.surface,
+                      decoration: BoxDecoration(
+                        color: palette.surface,
                         shape: BoxShape.circle,
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.arrow_back_rounded,
-                            color: AppColors.ink, size: 20),
+                        icon: Icon(Icons.arrow_back_rounded,
+                            color: palette.ink, size: 20),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ),
@@ -115,7 +143,7 @@ class _JourneyDetailsScreenState extends ConsumerState<JourneyDetailsScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: AppSpacing.md, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.black54,
+                          color: context.palette.scrim(0.54),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
@@ -135,7 +163,25 @@ class _JourneyDetailsScreenState extends ConsumerState<JourneyDetailsScreen> {
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(
                           AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, 0),
-                      child: _OverviewCard(itinerary: primary),
+                      child: _OverviewCard(
+                        itinerary: primary,
+                        adultCount: widget.adultCount,
+                        ladyCount: widget.ladyCount,
+                      ),
+                    ),
+                  ),
+
+                  // ── Ranking preference — re-plans live through the planner ──
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0),
+                      child: _PreferenceSelector(
+                        current: preference,
+                        onChanged: (p) => ref
+                            .read(settingsProvider.notifier)
+                            .setJourneyPreference(p),
+                      ),
                     ),
                   ),
 
@@ -177,7 +223,12 @@ class _JourneyDetailsScreenState extends ConsumerState<JourneyDetailsScreen> {
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(AppSpacing.lg,
                           AppSpacing.xl, AppSpacing.lg, 0),
-                      child: _LegsCard(itinerary: primary),
+                      child: _LegsCard(
+                        itinerary: primary,
+                        adultCount: widget.adultCount,
+                        ladyCount: widget.ladyCount,
+                        childCount: widget.childCount,
+                      ),
                     ),
                   ),
 
@@ -194,7 +245,7 @@ class _JourneyDetailsScreenState extends ConsumerState<JourneyDetailsScreen> {
                       ? 'Start Journey'
                       : 'Start Journey · ${primary.transferCount} transfer',
                   icon: Icons.directions_bus_rounded,
-                  onPressed: () => _showBoardingDialog(primary),
+                  onPressed: () => _onStartJourney(primary),
                 )
                     .animate()
                     .slideY(
@@ -211,9 +262,10 @@ class _JourneyDetailsScreenState extends ConsumerState<JourneyDetailsScreen> {
   }
 
   void _showBoardingDialog(Itinerary itinerary) {
+    final palette = context.palette;
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: palette.surface,
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(AppSpacing.radiusXl)),
@@ -227,7 +279,7 @@ class _JourneyDetailsScreenState extends ConsumerState<JourneyDetailsScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.hairline,
+                color: palette.hairline,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -235,14 +287,14 @@ class _JourneyDetailsScreenState extends ConsumerState<JourneyDetailsScreen> {
             Container(
               width: 56,
               height: 56,
-              decoration: const BoxDecoration(
-                color: AppColors.brandLight,
+              decoration: BoxDecoration(
+                color: palette.brandLight,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.directions_bus_rounded,
                 size: 28,
-                color: AppColors.brand,
+                color: palette.brand,
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
@@ -267,6 +319,24 @@ class _JourneyDetailsScreenState extends ConsumerState<JourneyDetailsScreen> {
               label: 'Yes, I am onboard',
               icon: Icons.check_rounded,
               onPressed: () {
+                // Issuing a ticket here is what makes the Passes tab real:
+                // the entitlement exists, is persisted, and its boarding
+                // reminder is scheduled by TicketsNotifier.
+                final settings = ref.read(settingsProvider);
+                final totalPassengers =
+                    widget.adultCount + widget.ladyCount + widget.childCount;
+                final category = settings.riderCategory != RiderCategory.adult
+                    ? settings.riderCategory
+                    : (widget.ladyCount > widget.adultCount + widget.childCount
+                        ? RiderCategory.woman
+                        : RiderCategory.adult);
+                ref.read(ticketsProvider.notifier).add(
+                      Ticket.fromItinerary(
+                        itinerary,
+                        riderCategory: category,
+                        passengers: totalPassengers.clamp(1, 6),
+                      ),
+                    );
                 Navigator.pop(context);
                 Navigator.push(
                   context,
@@ -283,16 +353,83 @@ class _JourneyDetailsScreenState extends ConsumerState<JourneyDetailsScreen> {
       ),
     );
   }
+
+  /// Called when "Start Journey" is tapped.
+  /// Checks if user is within 100m of the first boarding stop.
+  /// If not → opens WalkToStandScreen first.
+  Future<void> _onStartJourney(Itinerary itinerary) async {
+    if (itinerary.legs.isEmpty) {
+      _showBoardingDialog(itinerary);
+      return;
+    }
+
+    final firstStop = itinerary.legs.first.boardStop;
+
+    try {
+      geo.LocationPermission perm = await geo.Geolocator.checkPermission();
+      if (perm == geo.LocationPermission.denied) {
+        perm = await geo.Geolocator.requestPermission();
+      }
+      if (perm == geo.LocationPermission.denied ||
+          perm == geo.LocationPermission.deniedForever) {
+        if (mounted) _showBoardingDialog(itinerary);
+        return;
+      }
+
+      final pos = await geo.Geolocator.getCurrentPosition(
+        locationSettings: const geo.LocationSettings(
+          accuracy: geo.LocationAccuracy.high,
+          timeLimit: Duration(seconds: 5),
+        ),
+      );
+
+      final dist = Geo.distanceMeters(
+        GeoPoint(pos.latitude, pos.longitude),
+        GeoPoint(firstStop.lat, firstStop.lng),
+      );
+
+      if (!mounted) return;
+
+      if (dist > 100) {
+        // User is not at the stand — redirect to walk-to-stand
+        final arrived = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => WalkToStandScreen(
+              targetStand: NetworkStop(
+                id: firstStop.id,
+                name: firstStop.name,
+                city: firstStop.city,
+                depot: '',
+                district: '',
+                lat: firstStop.lat,
+                lng: firstStop.lng,
+              ),
+            ),
+          ),
+        );
+        if (!mounted) return;
+        if (arrived == true) _showBoardingDialog(itinerary);
+      } else {
+        _showBoardingDialog(itinerary);
+      }
+    } catch (_) {
+      if (mounted) _showBoardingDialog(itinerary);
+    }
+  }
 }
 
 class _LoadingScaffold extends StatelessWidget {
   const _LoadingScaffold();
 
   @override
-  Widget build(BuildContext context) => const Scaffold(
-        backgroundColor: AppColors.canvas,
-        body: Center(child: CircularProgressIndicator(color: AppColors.brand)),
-      );
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    return Scaffold(
+      backgroundColor: palette.canvas,
+      body: const Center(child: BrandLoader()),
+    );
+  }
 }
 
 class _ErrorScaffold extends StatelessWidget {
@@ -300,38 +437,74 @@ class _ErrorScaffold extends StatelessWidget {
   const _ErrorScaffold({required this.message});
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        backgroundColor: AppColors.canvas,
-        body: Center(child: Text(message)),
-      );
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    return Scaffold(
+      backgroundColor: palette.canvas,
+      body: ErrorState(
+        message: 'We could not load this journey. '
+            'Please try again in a moment.',
+        detail: message,
+      ),
+    );
+  }
 }
 
 // ── Overview stats ──────────────────────────────────────────────────────────
-class _OverviewCard extends StatelessWidget {
+class _OverviewCard extends ConsumerWidget {
   final Itinerary itinerary;
-  const _OverviewCard({required this.itinerary});
+  final int adultCount;
+  final int ladyCount;
+
+  const _OverviewCard({
+    required this.itinerary,
+    required this.adultCount,
+    required this.ladyCount,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = context.palette;
+    
+    double activeDistanceKm = itinerary.distanceKm;
+    int activeDurationMins = itinerary.totalMinutes;
+
+    for (final leg in itinerary.legs) {
+      final via = leg.intermediateStops
+          .map((s) => LatLng(s.lat, s.lng))
+          .toList(growable: false);
+      final legRef = TransLegRef(
+        origin: LatLng(leg.boardStop.lat, leg.boardStop.lng),
+        via: via,
+        destination: LatLng(leg.alightStop.lat, leg.alightStop.lng),
+      );
+
+      final result = ref.watch(legDirectionsViewProvider(legRef));
+      if (result != null) {
+        activeDistanceKm = activeDistanceKm - leg.distanceKm + (result.distanceMeters / 1000.0);
+        activeDurationMins = activeDurationMins - leg.estimate.totalMinutes + (result.durationSeconds ~/ 60);
+      }
+    }
+
     return AppCard(
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _StatItem(
-            label: 'Total Fare',
+            label: 'Fare ${adultCount > 0 && ladyCount > 0 ? "(${adultCount}A, ${ladyCount}L)" : ladyCount > 0 ? "(${ladyCount}L)" : adultCount > 1 ? "(${adultCount}A)" : ""}',
             value: FareEngine.formatRupees(itinerary.totalFare),
             icon: Icons.account_balance_wallet_outlined,
           ),
-          Container(width: 1, height: 40, color: AppColors.hairline),
+          Container(width: 1, height: 40, color: palette.hairline),
           _StatItem(
             label: 'Est. Time',
-            value: Schedule.formatDuration(itinerary.totalMinutes),
+            value: Schedule.formatDuration(activeDurationMins),
             icon: Icons.timer_outlined,
           ),
-          Container(width: 1, height: 40, color: AppColors.hairline),
+          Container(width: 1, height: 40, color: palette.hairline),
           _StatItem(
             label: 'Distance',
-            value: '${itinerary.distanceKm.round()} km',
+            value: '${activeDistanceKm.round()} km',
             icon: Icons.map_outlined,
           ),
         ],
@@ -341,25 +514,68 @@ class _OverviewCard extends StatelessWidget {
   }
 }
 
+// ── Ranking preference selector ────────────────────────────────────────────
+//
+// Changing this re-keys the planner query (journeyPlanProvider is family over
+// JourneyQuery, which carries the preference), so the ranked results below
+// rebuild genuinely — not just re-sorted client-side.
+class _PreferenceSelector extends StatelessWidget {
+  final JourneyPreference current;
+  final ValueChanged<JourneyPreference> onChanged;
+
+  const _PreferenceSelector({required this.current, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('details.rank_by'.tr(), style: theme.textTheme.labelSmall),
+        const SizedBox(height: AppSpacing.sm),
+        Wrap(
+          spacing: AppSpacing.sm,
+          children: [
+            for (final pref in JourneyPreference.values)
+              ChoiceChip(
+                selected: pref == current,
+                onSelected: (_) => onChanged(pref),
+                label: Text(_label(pref)),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  static String _label(JourneyPreference p) => switch (p) {
+        JourneyPreference.fastest => 'details.pref_fastest'.tr(),
+        JourneyPreference.cheapest => 'details.pref_cheapest'.tr(),
+        JourneyPreference.fewestChanges => 'details.pref_fewest'.tr(),
+        JourneyPreference.earliestArrival => 'details.pref_earliest'.tr(),
+      };
+}
+
 class _TransferBanner extends StatelessWidget {
   final Itinerary itinerary;
   const _TransferBanner({required this.itinerary});
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     final transfer = itinerary.transfers.firstOrNull;
     final city = transfer?.stop.city ?? 'a transfer stop';
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3CD),
+        color: palette.warningLight,
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        border: Border.all(color: const Color(0xFFFFD700)),
+        border: Border.all(color: palette.warning.withValues(alpha: 0.32)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.swap_horiz_rounded,
-              color: Color(0xFF7B5800), size: 22),
+          Icon(Icons.swap_horiz_rounded,
+              color: palette.warning, size: 22),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
@@ -368,14 +584,14 @@ class _TransferBanner extends StatelessWidget {
                 Text(
                   'Connecting Journey — ${itinerary.transferCount} Transfer',
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      fontSize: 13, color: const Color(0xFF7B5800)),
+                      fontSize: 13, color: palette.warning),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'Change buses at $city. '
                   '${itinerary.hasSleeper ? 'Overnight service.' : ''}',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontSize: 12, color: const Color(0xFF7B5800)),
+                      fontSize: 12, color: palette.warning),
                 ),
               ],
             ),
@@ -442,6 +658,7 @@ class _ItineraryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     final serviceClass = itinerary.legs.first.serviceClass;
     final busType = serviceClass.label;
     return GestureDetector(
@@ -450,10 +667,10 @@ class _ItineraryCard extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.brandLight : AppColors.surface,
+          color: isSelected ? palette.brandLight : palette.surface,
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
           border: Border.all(
-            color: isSelected ? AppColors.brand : AppColors.hairline,
+            color: isSelected ? palette.brand : palette.hairline,
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -465,7 +682,7 @@ class _ItineraryCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.brand : AppColors.canvas,
+                  color: isSelected ? palette.brand : palette.canvas,
                   borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                   image: imageUrl != null
                       ? DecorationImage(
@@ -473,7 +690,7 @@ class _ItineraryCard extends StatelessWidget {
                           fit: BoxFit.cover,
                           colorFilter: isSelected
                               ? ColorFilter.mode(
-                                  AppColors.brand.withValues(alpha: 0.55),
+                                  palette.brand.withValues(alpha: 0.55),
                                   BlendMode.srcATop)
                               : null,
                         )
@@ -484,7 +701,7 @@ class _ItineraryCard extends StatelessWidget {
                         isSelected
                             ? Icons.check_circle_rounded
                             : Icons.directions_bus_outlined,
-                        color: isSelected ? Colors.white : AppColors.inkMuted,
+                        color: isSelected ? palette.onBrand : palette.inkMuted,
                         size: 24,
                       )
                     : null,
@@ -505,13 +722,30 @@ class _ItineraryCard extends StatelessWidget {
                         ?.copyWith(fontSize: 14),
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    'Departs ${Schedule.formatClock(Schedule.minuteOfDay(itinerary.departsAt))} · '
-                    'arrives ${Schedule.formatClock(Schedule.minuteOfDay(itinerary.arrivesAt))}',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(fontSize: 12),
+                  Row(
+                    children: [
+                      Icon(Icons.departure_board_rounded, size: 14, color: palette.brand),
+                      const SizedBox(width: 4),
+                      Text(
+                        Schedule.formatClock(Schedule.minuteOfDay(itinerary.departsAt)),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: palette.ink,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Icon(Icons.location_on_rounded, size: 14, color: palette.brand),
+                      const SizedBox(width: 4),
+                      Text(
+                        Schedule.formatClock(Schedule.minuteOfDay(itinerary.arrivesAt)),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: palette.ink,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -520,7 +754,7 @@ class _ItineraryCard extends StatelessWidget {
               FareEngine.formatRupees(itinerary.totalFare),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontSize: 17,
-                    color: AppColors.brand,
+                    color: palette.brand,
                   ),
             ),
           ],
@@ -545,6 +779,7 @@ class _BoardingGuideCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final palette = context.palette;
     final firstLeg = itinerary.legs.first;
     final serviceClass = firstLeg.serviceClass;
 
@@ -556,22 +791,35 @@ class _BoardingGuideCard extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         _StepCard(
           stepNumber: '1',
-          stepColor: AppColors.brand,
+          stepColor: palette.brand,
           icon: Icons.place_rounded,
           title: 'Go to ${firstLeg.boardStop.name}',
-          subtitle: '${firstLeg.boardStop.city}'
+          subtitle: Text(
+              '${firstLeg.boardStop.city}'
               '${firstLeg.boardStop.depot.isNotEmpty ? ' · ${firstLeg.boardStop.depot}' : ''}',
+              style: theme.textTheme.bodyMedium?.copyWith(fontSize: 11, height: 1.3),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis),
           trailing: null,
         ),
         const SizedBox(height: AppSpacing.sm),
         _StepCard(
           stepNumber: '2',
-          stepColor: const Color(0xFF1B7C56),
+          stepColor: palette.success,
           icon: Icons.directions_bus_rounded,
           title: 'Board: ${serviceClass.label}',
-          subtitle:
-              'Tell conductor: "${firstLeg.alightStop.city}" · '
-              'departs ${Schedule.formatClock(Schedule.minuteOfDay(firstLeg.departsAt))}',
+          subtitle: RichText(
+            text: TextSpan(
+              style: theme.textTheme.bodyMedium?.copyWith(fontSize: 11, height: 1.3),
+              children: [
+                TextSpan(text: 'Tell conductor: "${firstLeg.alightStop.city}"\n'),
+                TextSpan(
+                  text: 'DEPARTS ${Schedule.formatClock(Schedule.minuteOfDay(firstLeg.departsAt))}',
+                  style: TextStyle(fontWeight: FontWeight.w800, color: palette.success),
+                ),
+              ],
+            ),
+          ),
           trailing: _BusBoardingImage(busType: serviceClass.key),
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -583,25 +831,25 @@ class _BoardingGuideCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
-                color: const Color(0xFF2F3E46).withValues(alpha: 0.07),
+                color: palette.inkSoft.withValues(alpha: 0.07),
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                 border: Border.all(
-                    color: const Color(0xFF2F3E46).withValues(alpha: 0.2)),
+                    color: palette.inkSoft.withValues(alpha: 0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.swap_horiz_rounded,
-                          size: 18, color: Color(0xFF2F3E46)),
+                      Icon(Icons.swap_horiz_rounded,
+                          size: 18, color: palette.inkSoft),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: Text(
                           'Transfer ${index + 1} at ${gap.stop.name} '
                           '· wait ${gap.waitMinutes} min',
                           style: theme.textTheme.labelLarge
-                              ?.copyWith(fontSize: 13, color: const Color(0xFF2F3E46)),
+                              ?.copyWith(fontSize: 13, color: palette.inkSoft),
                         ),
                       ),
                     ],
@@ -616,13 +864,16 @@ class _BoardingGuideCard extends StatelessWidget {
                   const SizedBox(height: AppSpacing.sm),
                   _StepCard(
                     stepNumber: '${index + 3}',
-                    stepColor: AppColors.accent,
+                    stepColor: palette.accent,
                     icon: Icons.directions_bus_filled_rounded,
                     title:
                         'Board: ${itinerary.legs[index + 1].serviceClass.label}',
-                    subtitle:
+                    subtitle: Text(
                         '${gap.stop.city} → ${itinerary.legs[index + 1].alightStop.city}'
                         ' · ${FareEngine.formatRupees(itinerary.legs[index + 1].fare)}',
+                        style: theme.textTheme.bodyMedium?.copyWith(fontSize: 11, height: 1.3),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis),
                     trailing: _BusBoardingImage(
                         busType: itinerary.legs[index + 1].serviceClass.key),
                   ),
@@ -640,7 +891,7 @@ class _StepCard extends StatelessWidget {
   final Color stepColor;
   final IconData icon;
   final String title;
-  final String subtitle;
+  final Widget subtitle;
   final Widget? trailing;
 
   const _StepCard({
@@ -654,12 +905,13 @@ class _StepCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: palette.surface,
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        border: Border.all(color: AppColors.hairline),
+        border: Border.all(color: palette.hairline),
       ),
       child: Row(
         children: [
@@ -695,13 +947,7 @@ class _StepCard extends StatelessWidget {
                           .titleSmall
                           ?.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 3),
-                  Text(subtitle,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(fontSize: 11, height: 1.3),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis),
+                  subtitle,
                 ],
               ),
             ),
@@ -719,14 +965,15 @@ class _BusBoardingImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     final url = BusImageHelper.getImageUrl(busType);
     if (url == null) {
       return Container(
         width: 72,
         height: 60,
-        color: AppColors.canvas,
-        child: const Icon(Icons.directions_bus_outlined,
-            color: AppColors.inkMuted, size: 28),
+        color: palette.canvas,
+        child: Icon(Icons.directions_bus_outlined,
+            color: palette.inkMuted, size: 28),
       );
     }
     return Container(
@@ -742,40 +989,84 @@ class _BusBoardingImage extends StatelessWidget {
   }
 }
 
-class _NextDepartureCard extends StatelessWidget {
+class _NextDepartureCard extends ConsumerWidget {
   final Itinerary itinerary;
   const _NextDepartureCard({required this.itinerary});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final palette = context.palette;
     final firstLeg = itinerary.legs.first;
     final departsAt = firstLeg.departsAt;
+
+    final via = firstLeg.intermediateStops
+        .map((s) => LatLng(s.lat, s.lng))
+        .toList(growable: false);
+    final legRef = TransLegRef(
+      origin: LatLng(firstLeg.boardStop.lat, firstLeg.boardStop.lng),
+      via: via,
+      destination: LatLng(firstLeg.alightStop.lat, firstLeg.alightStop.lng),
+    );
+    final result = ref.watch(legDirectionsViewProvider(legRef));
+    final displayDistanceKm = result != null ? (result.distanceMeters / 1000.0) : firstLeg.distanceKm;
+    final displayDurationMins = result != null ? (result.durationSeconds ~/ 60) : firstLeg.estimate.totalMinutes;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.brandLight,
+        color: palette.brandLight,
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        border: Border.all(color: AppColors.brand.withValues(alpha: 0.25)),
+        border: Border.all(color: palette.brand.withValues(alpha: 0.25)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.schedule_rounded, size: 18, color: AppColors.brand),
+          Icon(Icons.schedule_rounded, size: 18, color: palette.brand),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Departs ${Schedule.formatClock(Schedule.minuteOfDay(departsAt))} · '
-                  '${Schedule.formatDuration(firstLeg.estimate.totalMinutes)} onboard',
-                  style: theme.textTheme.labelMedium
-                      ?.copyWith(color: AppColors.brand, fontWeight: FontWeight.w700),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: palette.brand,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'DEPARTS',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: palette.onBrand,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      Schedule.formatClock(Schedule.minuteOfDay(departsAt)),
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: palette.brand,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '·  ${Schedule.formatDuration(displayDurationMins)} onboard',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: palette.brand.withValues(alpha: 0.8),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${firstLeg.distanceKm.round()} km · '
+                  '${displayDistanceKm.round()} km · '
                   'via ${firstLeg.route.distanceKm.round()} km corridor',
                   style: theme.textTheme.bodyMedium?.copyWith(fontSize: 11),
                 ),
@@ -789,13 +1080,75 @@ class _NextDepartureCard extends StatelessWidget {
 }
 
 // ── Legs / fares breakdown ───────────────────────────────────────────────────
+/// Adult-fare total before any concession, for the receipt-style breakdown.
+int adultBaseSum(Itinerary itinerary) => itinerary.legs.fold(0, (sum, leg) {
+      final serviceClass = leg.serviceClass;
+      final base = FareEngine.compute(
+        distanceKm: leg.distanceKm,
+        serviceClass: serviceClass,
+      );
+      return sum + base.baseFare;
+    });
+
+/// The rider's concession, surfaced with a live example: this trip, this
+/// category, this many rupees off. Comes from [settingsProvider] so it's the
+/// category they actually picked in Profile, not a guess.
+class _ConcessionRow extends ConsumerWidget {
+  final int adultTotal;
+  const _ConcessionRow({required this.adultTotal});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final category = ref.watch(settingsProvider.select((s) => s.riderCategory));
+    if (category.discountPercent == 0) return const SizedBox.shrink();
+    final saved = (adultTotal * category.discountPercent / 100).round();
+    final theme = Theme.of(context);
+    final palette = context.palette;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Text(
+              'details.concession_row'.tr(namedArgs: {
+                'category': category.label,
+                'pct': '${category.discountPercent}',
+              }),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: palette.success,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Text('- ${FareEngine.formatRupees(saved)}',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: palette.success,
+                fontWeight: FontWeight.w700,
+              )),
+        ],
+      ),
+    );
+  }
+}
+
 class _LegsCard extends StatelessWidget {
   final Itinerary itinerary;
-  const _LegsCard({required this.itinerary});
+  final int adultCount;
+  final int ladyCount;
+  final int childCount;
+
+  const _LegsCard({
+    required this.itinerary,
+    required this.adultCount,
+    required this.ladyCount,
+    required this.childCount,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final palette = context.palette;
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -806,19 +1159,73 @@ class _LegsCard extends StatelessWidget {
           for (var i = 0; i < itinerary.legs.length; i++) ...[
             _LegRow(leg: itinerary.legs[i], index: i),
             if (i < itinerary.legs.length - 1)
-              const Divider(height: 28, color: AppColors.hairline),
+              Divider(height: 28, color: palette.hairline),
           ],
-          const Divider(height: 28, color: AppColors.hairline),
+          Divider(height: 28, color: palette.hairline),
+          
+          if (adultCount > 0 || ladyCount > 0 || childCount > 0) ...[
+            Builder(builder: (context) {
+              int adultTotal = 0;
+              int ladyTotal = 0;
+              int childTotal = 0;
+              for (var leg in itinerary.legs) {
+                adultTotal += FareEngine.calculateTotalTripFare(leg.distanceKm, leg.service.serviceClass.key, adultCount, 0, 0, operatorName: leg.route.operatorName);
+                ladyTotal += FareEngine.calculateTotalTripFare(leg.distanceKm, leg.service.serviceClass.key, 0, ladyCount, 0, operatorName: leg.route.operatorName);
+                childTotal += FareEngine.calculateTotalTripFare(leg.distanceKm, leg.service.serviceClass.key, 0, 0, childCount, operatorName: leg.route.operatorName);
+              }
+              return Column(
+                children: [
+                  if (adultCount > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Adults ($adultCount)', style: theme.textTheme.bodyMedium),
+                          Text(FareEngine.formatRupees(adultTotal), style: theme.textTheme.bodyMedium),
+                        ],
+                      ),
+                    ),
+                  if (ladyCount > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Ladies ($ladyCount)', style: theme.textTheme.bodyMedium),
+                          Text(FareEngine.formatRupees(ladyTotal), style: theme.textTheme.bodyMedium),
+                        ],
+                      ),
+                    ),
+                  if (childCount > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Children ($childCount)', style: theme.textTheme.bodyMedium),
+                          Text(FareEngine.formatRupees(childTotal), style: theme.textTheme.bodyMedium),
+                        ],
+                      ),
+                    ),
+                ],
+              );
+            }),
+            Divider(height: 16, color: palette.hairline),
+          ],
+
+          _ConcessionRow(adultTotal: adultBaseSum(itinerary)),
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Total (adult)',
+              Text('Total Passenger Fare',
                   style: theme.textTheme.labelLarge
                       ?.copyWith(fontWeight: FontWeight.w700)),
               Text(
                 FareEngine.formatRupees(itinerary.totalFare),
                 style: theme.textTheme.titleLarge?.copyWith(
-                    fontSize: 17, color: AppColors.brand),
+                    fontSize: 17, color: palette.brand),
               ),
             ],
           ),
@@ -828,27 +1235,44 @@ class _LegsCard extends StatelessWidget {
   }
 }
 
-class _LegRow extends StatelessWidget {
+class _LegRow extends ConsumerWidget {
   final JourneyLeg leg;
   final int index;
   const _LegRow({required this.leg, required this.index});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final palette = context.palette;
+    
+    final via = leg.intermediateStops
+        .map((s) => LatLng(s.lat, s.lng))
+        .toList(growable: false);
+    final legRef = TransLegRef(
+      origin: LatLng(leg.boardStop.lat, leg.boardStop.lng),
+      via: via,
+      destination: LatLng(leg.alightStop.lat, leg.alightStop.lng),
+    );
+    final result = ref.watch(legDirectionsViewProvider(legRef));
+    final displayDistanceKm = result != null ? (result.distanceMeters / 1000.0) : leg.distanceKm;
+    
+    // Extract stop names for intermediate stops
+    final viaStops = leg.intermediateStops.map((s) => s.name).toList();
+    final viaText = viaStops.isEmpty ? '' : 'via ${viaStops.join(', ')}';
+
     return Row(
       children: [
         Container(
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: AppColors.brandLight,
+            color: palette.brandLight,
             borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
           ),
           child: Icon(leg.serviceClass.ac
               ? Icons.ac_unit_rounded
               : Icons.directions_bus_outlined,
-              color: AppColors.brand, size: 18),
+              color: palette.brand, size: 18),
         ),
         const SizedBox(width: AppSpacing.md),
         Expanded(
@@ -859,20 +1283,57 @@ class _LegRow extends StatelessWidget {
                   style: theme.textTheme.labelLarge
                       ?.copyWith(fontWeight: FontWeight.w700)),
               const SizedBox(height: 2),
-              Text(
-                '${leg.serviceClass.label} · '
-                '${Schedule.formatClock(Schedule.minuteOfDay(leg.departsAt))} → '
-                '${Schedule.formatClock(Schedule.minuteOfDay(leg.arrivesAt))} · '
-                '${leg.distanceKm.round()} km',
-                style: theme.textTheme.bodyMedium?.copyWith(fontSize: 11),
+              // Published depot board vs synthesised headway — the rider
+              // deserves to know which clock to trust.
+              ScheduleConfidenceBadge(confidence: leg.service.confidence),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Text(
+                    Schedule.formatClock(Schedule.minuteOfDay(leg.departsAt)),
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: palette.ink,
+                    ),
+                  ),
+                  Icon(Icons.arrow_right_alt_rounded, size: 14, color: palette.inkMuted),
+                  Text(
+                    Schedule.formatClock(Schedule.minuteOfDay(leg.arrivesAt)),
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: palette.ink,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      '·  ${leg.serviceClass.label} · ${displayDistanceKm.round()} km',
+                      style: theme.textTheme.bodyMedium?.copyWith(fontSize: 11, color: palette.inkMuted),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
+              if (viaText.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  viaText,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontSize: 11, 
+                    color: palette.inkMuted,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ],
           ),
         ),
         Text(
           FareEngine.formatRupees(leg.fare),
           style: theme.textTheme.titleLarge
-              ?.copyWith(fontSize: 16, color: AppColors.brand),
+              ?.copyWith(fontSize: 16, color: palette.brand),
         ),
       ],
     );
@@ -880,7 +1341,7 @@ class _LegRow extends StatelessWidget {
 }
 
 // ── Map ──────────────────────────────────────────────────────────────────────
-class _RouteMap extends StatelessWidget {
+class _RouteMap extends ConsumerStatefulWidget {
   final NetworkStop origin;
   final NetworkStop destination;
   final Itinerary itinerary;
@@ -892,37 +1353,204 @@ class _RouteMap extends StatelessWidget {
   });
 
   @override
+  ConsumerState<_RouteMap> createState() => _RouteMapState();
+}
+
+class _RouteMapState extends ConsumerState<_RouteMap> with SingleTickerProviderStateMixin {
+  GoogleMapController? _mapController;
+  late AnimationController _animController;
+  late Animation<double> _animation;
+  BitmapDescriptor? _originMarker;
+  BitmapDescriptor? _destMarker;
+  BitmapDescriptor? _viaMarker;
+  final Map<String, BitmapDescriptor> _viaMarkersMap = {};
+  
+  List<LatLng> _cachedPoints = [];
+  LatLng? _cachedCenter;
+  final Map<String, int> _markerIndexCache = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    );
+    _animation = CurvedAnimation(parent: _animController, curve: Curves.easeInOut);
+    _animController.addListener(() {
+      if (mounted) setState(() {});
+    });
+
+    _loadMarkers();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadMarkers() async {
+    final palette = context.palette;
+    _originMarker = widget.origin.imageUrl != null
+        ? await MapMarkerUtils.createImageMarker(
+            imageUrl: widget.origin.imageUrl!, color: palette.info, size: 48)
+        : await MapMarkerUtils.createCustomMarker(
+            color: palette.info, size: 48);
+    _destMarker = widget.destination.imageUrl != null
+        ? await MapMarkerUtils.createImageMarker(
+            imageUrl: widget.destination.imageUrl!, color: palette.success, size: 56)
+        : await MapMarkerUtils.createCustomMarker(
+            color: palette.success, size: 56, isDestination: true);
+    _viaMarker = await MapMarkerUtils.createCustomMarker(
+        color: palette.accent, size: 36);
+
+    final network = ref.read(networkProvider);
+    for (final leg in widget.itinerary.legs) {
+      for (final s in leg.intermediateStops) {
+        final netStop = network.value?.stopById(s.stopId);
+        if (netStop != null && netStop.imageUrl != null) {
+          _viaMarkersMap['${leg.route.id}-${s.stopId}'] = await MapMarkerUtils.createImageMarker(
+              imageUrl: netStop.imageUrl!, color: palette.accent, size: 36);
+        }
+      }
+    }
+
+    if (mounted) setState(() {});
+  }
+
+  void _onMapCreated(GoogleMapController controller) {
+    _mapController = controller;
+    _fitBounds();
+  }
+
+  void _fitBounds() {
+    if (_mapController == null) return;
+    _updateCache();
+    final points = _cachedPoints;
+    if (points.isEmpty) return;
+
+    double minLat = points.first.latitude;
+    double minLng = points.first.longitude;
+    double maxLat = points.first.latitude;
+    double maxLng = points.first.longitude;
+
+    for (final p in points) {
+      if (p.latitude < minLat) minLat = p.latitude;
+      if (p.latitude > maxLat) maxLat = p.latitude;
+      if (p.longitude < minLng) minLng = p.longitude;
+      if (p.longitude > maxLng) maxLng = p.longitude;
+    }
+
+    // Delay slightly to ensure layout is done
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        _mapController?.animateCamera(
+          CameraUpdate.newLatLngBounds(
+            LatLngBounds(
+              southwest: LatLng(minLat, minLng),
+              northeast: LatLng(maxLat, maxLng),
+            ),
+            60.0, // padding
+          ),
+        ).then((_) {
+          if (mounted) {
+            _animController.forward();
+          }
+        });
+      }
+    });
+  }
+
+  void _updateCache() {
+    final points = <LatLng>[];
+    if (widget.itinerary.legs.isEmpty) {
+      points.add(LatLng(widget.origin.lat, widget.origin.lng));
+      points.add(LatLng(widget.destination.lat, widget.destination.lng));
+    } else {
+      for (final leg in widget.itinerary.legs) {
+        final via = leg.intermediateStops
+            .map((s) => LatLng(s.lat, s.lng))
+            .toList(growable: false);
+        final legRef = TransLegRef(
+          origin: LatLng(leg.boardStop.lat, leg.boardStop.lng),
+          via: via,
+          destination: LatLng(leg.alightStop.lat, leg.alightStop.lng),
+        );
+
+        final road = ref.watch(legRoadPolylineViewProvider(legRef));
+        if (road != null && road.isNotEmpty) {
+          points.addAll(road);
+        } else {
+          points.addAll(legRef.points);
+        }
+      }
+    }
+    
+    if (points.isNotEmpty && _cachedPoints.length != points.length) {
+      _cachedPoints = points;
+      
+      final latSum = points.fold<double>(0, (a, p) => a + p.latitude);
+      final lngSum = points.fold<double>(0, (a, p) => a + p.longitude);
+      _cachedCenter = LatLng(latSum / points.length, lngSum / points.length);
+      
+      // Cache the marker indices so we don't scan the array every frame
+      for (final leg in widget.itinerary.legs) {
+        for (final s in leg.intermediateStops) {
+          final key = '${leg.route.id}-${s.stopId}';
+          final idx = points.indexWhere((p) => p.latitude == s.lat && p.longitude == s.lng);
+          if (idx != -1) _markerIndexCache[key] = idx;
+        }
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final polyline = itinerary.polyline.map((p) => LatLng(p.lat, p.lng)).toList();
-    final points = polyline.isNotEmpty
-        ? polyline
-        : <LatLng>[
-            LatLng(origin.lat, origin.lng),
-            LatLng(destination.lat, destination.lng),
-          ];
+    _updateCache();
+    
+    final palette = context.palette;
+    final allPoints = _cachedPoints;
+    
+    if (allPoints.isEmpty) {
+      return Container(color: palette.canvas);
+    }
+    
+    final int pointsToShow = (allPoints.length * _animation.value).ceil();
+    final points = allPoints.take(pointsToShow).toList();
 
-    final latSum = points.fold<double>(0, (a, p) => a + p.latitude);
-    final lngSum = points.fold<double>(0, (a, p) => a + p.longitude);
-    final center = LatLng(latSum / points.length, lngSum / points.length);
+    final center = _cachedCenter ?? LatLng(widget.origin.lat, widget.origin.lng);
 
-    final viaMarkers = itinerary.legs.expand((leg) {
-      return leg.intermediateStops.map((s) => Marker(
-            markerId: MarkerId('via-${leg.route.id}-${s.stopId}'),
-            position: LatLng(s.lat, s.lng),
-            icon: BitmapDescriptor.defaultMarkerWithHue(
-                BitmapDescriptor.hueOrange),
-            infoWindow: InfoWindow(
-                title: s.name,
-                snippet: '${s.city} · ${s.cumKm.toStringAsFixed(0)} km'),
-          ));
+    final viaMarkers = widget.itinerary.legs.expand((leg) {
+      return leg.intermediateStops.map((s) {
+        final key = '${leg.route.id}-${s.stopId}';
+        
+        // Hide markers that are ahead of the current animation
+        final markerIndex = _markerIndexCache[key];
+        if (markerIndex != null && markerIndex > pointsToShow) {
+          return null;
+        }
+
+        return Marker(
+          markerId: MarkerId('via-$key'),
+          position: LatLng(s.lat, s.lng),
+          icon: _viaMarkersMap[key] ?? _viaMarker ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+          anchor: const Offset(0.5, 1.0),
+          infoWindow: InfoWindow(
+              title: s.name,
+              snippet: '${s.city} · ${s.cumKm.toStringAsFixed(0)} km'),
+        );
+      }).whereType<Marker>();
     }).toSet();
 
     return GoogleMap(
+      onMapCreated: _onMapCreated,
       initialCameraPosition: CameraPosition(
         target: center,
         zoom: points.length > 2 ? 6.2 : 7.5,
+        tilt: 50.0, // 3D perspective
       ),
-      style: kModernMapStyleJson,
+      style: mapStyleFor(Theme.of(context).brightness),
       zoomControlsEnabled: false,
       myLocationButtonEnabled: false,
       compassEnabled: false,
@@ -938,7 +1566,7 @@ class _RouteMap extends StatelessWidget {
         Polyline(
           polylineId: const PolylineId('route'),
           points: points,
-          color: AppColors.brand,
+          color: palette.brand,
           width: 4,
           jointType: JointType.round,
         ),
@@ -946,15 +1574,17 @@ class _RouteMap extends StatelessWidget {
       markers: {
         Marker(
           markerId: const MarkerId('origin'),
-          position: LatLng(origin.lat, origin.lng),
-          infoWindow: InfoWindow(title: origin.name, snippet: origin.city),
+          position: LatLng(widget.origin.lat, widget.origin.lng),
+          icon: _originMarker ?? BitmapDescriptor.defaultMarker,
+          anchor: const Offset(0.5, 1.0),
+          infoWindow: InfoWindow(title: widget.origin.name, snippet: widget.origin.city),
         ),
         Marker(
           markerId: const MarkerId('dest'),
-          position: LatLng(destination.lat, destination.lng),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-          infoWindow:
-              InfoWindow(title: destination.name, snippet: destination.city),
+          position: LatLng(widget.destination.lat, widget.destination.lng),
+          icon: _destMarker ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          anchor: const Offset(0.5, 1.0),
+          infoWindow: InfoWindow(title: widget.destination.name, snippet: widget.destination.city),
         ),
         ...viaMarkers,
       },
@@ -976,10 +1606,11 @@ class _StatItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: AppColors.brand, size: 22),
+        Icon(icon, color: palette.brand, size: 22),
         const SizedBox(height: AppSpacing.sm),
         Text(value,
             style: Theme.of(context)
@@ -1009,52 +1640,13 @@ class _NoRouteFound extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.hairline),
-              ),
-              child: const Icon(
-                Icons.bus_alert_rounded,
-                size: 32,
-                color: AppColors.inkMuted,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            Text(
-              'No route found',
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineMedium
-                  ?.copyWith(fontSize: 22),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'No buses can get you from $originCity to $destCity '
-              'within the search limits.\nTry a different time or destination.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(height: 1.5),
-            ),
-            const SizedBox(height: AppSpacing.xxl),
-            PrimaryButton(
-              label: 'Go Back',
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],
-        ),
-      ),
+    return EmptyState(
+      icon: Icons.bus_alert_rounded,
+      title: 'No route found',
+      message: 'No buses can get you from $originCity to $destCity '
+          'within the search limits. Try a different time or destination.',
+      actionLabel: 'Go Back',
+      onAction: () => Navigator.pop(context),
     );
   }
 }

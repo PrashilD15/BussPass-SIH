@@ -1,0 +1,103 @@
+{
+  "stc": "TSRTC",
+  "state": "Telangana",
+  "stops": [
+    {"id": "hyd-mgbs", "name": "MGBS (Mahatma Gandhi Bus Station)", "city": "Hyderabad", "depot": "Hyderabad", "district": "Hyderabad", "lat": 17.3616, "lng": 78.4747, "tier": 3},
+    {"id": "hyd-jubilee", "name": "Jubilee Bus Station", "city": "Hyderabad", "depot": "Hyderabad", "district": "Hyderabad", "lat": 17.4433, "lng": 78.4487, "tier": 3},
+    {"id": "warangal-bs", "name": "Warangal Bus Stand", "city": "Warangal", "depot": "Warangal", "district": "Warangal", "lat": 17.9784, "lng": 79.5941, "tier": 3},
+    {"id": "nizamabad-bs", "name": "Nizamabad Bus Stand", "city": "Nizamabad", "depot": "Nizamabad", "district": "Nizamabad", "lat": 18.6725, "lng": 78.0941, "tier": 2},
+    {"id": "karimnagar-bs", "name": "Karimnagar Bus Stand", "city": "Karimnagar", "depot": "Karimnagar", "district": "Karimnagar", "lat": 18.4386, "lng": 79.1288, "tier": 2},
+    {"id": "khammam-bs", "name": "Khammam Bus Stand", "city": "Khammam", "depot": "Khammam", "district": "Khammam", "lat": 17.2473, "lng": 80.1514, "tier": 2},
+    {"id": "nalgonda-bs", "name": "Nalgonda Bus Stand", "city": "Nalgonda", "depot": "Nalgonda", "district": "Nalgonda", "lat": 17.0572, "lng": 79.2671, "tier": 2},
+    {"id": "sangareddy-bs", "name": "Sangareddy Bus Stand", "city": "Sangareddy", "depot": "Sangareddy", "district": "Sangareddy", "lat": 17.6251, "lng": 78.0863, "tier": 2},
+    {"id": "mahbubnagar-bs", "name": "Mahbubnagar Bus Stand", "city": "Mahbubnagar", "depot": "Mahbubnagar", "district": "Mahbubnagar", "lat": 16.7488, "lng": 77.9864, "tier": 2},
+    {"id": "adilabad-bs", "name": "Adilabad Bus Stand", "city": "Adilabad", "depot": "Adilabad", "district": "Adilabad", "lat": 19.6641, "lng": 78.5320, "tier": 2},
+    {"id": "siddipet-bs", "name": "Siddipet Bus Stand", "city": "Siddipet", "depot": "Siddipet", "district": "Siddipet", "lat": 18.1024, "lng": 78.8521, "tier": 2}
+  ],
+  "routes": [
+    {
+      "id": "tsrtc-hyd-wgl-001",
+      "name": "Hyderabad – Warangal Super Luxury",
+      "operator": "TSRTC",
+      "corridor": true,
+      "origin_stop_id": "hyd-mgbs",
+      "destination_stop_id": "warangal-bs",
+      "origin_city": "Hyderabad",
+      "destination_city": "Warangal",
+      "distance_km": 149,
+      "bus_types": ["Super Luxury", "Garuda Plus"],
+      "stops": [
+        {"stop_id": "hyd-mgbs", "name": "MGBS (Mahatma Gandhi Bus Station)", "city": "Hyderabad", "lat": 17.3616, "lng": 78.4747, "seq": 1, "cum_km": 0},
+        {"stop_id": "karimnagar-bs", "name": "Karimnagar Bus Stand", "city": "Karimnagar", "lat": 18.4386, "lng": 79.1288, "seq": 2, "cum_km": 120},
+        {"stop_id": "warangal-bs", "name": "Warangal Bus Stand", "city": "Warangal", "lat": 17.9784, "lng": 79.5941, "seq": 3, "cum_km": 149}
+      ]
+    },
+    {
+      "id": "tsrtc-hyd-nzb-001",
+      "name": "Hyderabad – Nizamabad Express",
+      "operator": "TSRTC",
+      "corridor": true,
+      "origin_stop_id": "hyd-jubilee",
+      "destination_stop_id": "nizamabad-bs",
+      "origin_city": "Hyderabad",
+      "destination_city": "Nizamabad",
+      "distance_km": 174,
+      "bus_types": ["Express", "Super Luxury"],
+      "stops": [
+        {"stop_id": "hyd-jubilee", "name": "Jubilee Bus Station", "city": "Hyderabad", "lat": 17.4433, "lng": 78.4487, "seq": 1, "cum_km": 0},
+        {"stop_id": "sangareddy-bs", "name": "Sangareddy Bus Stand", "city": "Sangareddy", "lat": 17.6251, "lng": 78.0863, "seq": 2, "cum_km": 60},
+        {"stop_id": "nizamabad-bs", "name": "Nizamabad Bus Stand", "city": "Nizamabad", "lat": 18.6725, "lng": 78.0941, "seq": 3, "cum_km": 174}
+      ]
+    },
+    {
+      "id": "tsrtc-hyd-khammam-001",
+      "name": "Hyderabad – Khammam Garuda",
+      "operator": "TSRTC",
+      "corridor": true,
+      "origin_stop_id": "hyd-mgbs",
+      "destination_stop_id": "khammam-bs",
+      "origin_city": "Hyderabad",
+      "destination_city": "Khammam",
+      "distance_km": 204,
+      "bus_types": ["Garuda Plus", "Express"],
+      "stops": [
+        {"stop_id": "hyd-mgbs", "name": "MGBS (Mahatma Gandhi Bus Station)", "city": "Hyderabad", "lat": 17.3616, "lng": 78.4747, "seq": 1, "cum_km": 0},
+        {"stop_id": "nalgonda-bs", "name": "Nalgonda Bus Stand", "city": "Nalgonda", "lat": 17.0572, "lng": 79.2671, "seq": 2, "cum_km": 100},
+        {"stop_id": "khammam-bs", "name": "Khammam Bus Stand", "city": "Khammam", "lat": 17.2473, "lng": 80.1514, "seq": 3, "cum_km": 204}
+      ]
+    },
+    {
+      "id": "tsrtc-hyd-adilabad-001",
+      "name": "Hyderabad – Adilabad Express",
+      "operator": "TSRTC",
+      "corridor": true,
+      "origin_stop_id": "hyd-jubilee",
+      "destination_stop_id": "adilabad-bs",
+      "origin_city": "Hyderabad",
+      "destination_city": "Adilabad",
+      "distance_km": 331,
+      "bus_types": ["Express", "Super Luxury"],
+      "stops": [
+        {"stop_id": "hyd-jubilee", "name": "Jubilee Bus Station", "city": "Hyderabad", "lat": 17.4433, "lng": 78.4487, "seq": 1, "cum_km": 0},
+        {"stop_id": "nizamabad-bs", "name": "Nizamabad Bus Stand", "city": "Nizamabad", "lat": 18.6725, "lng": 78.0941, "seq": 2, "cum_km": 174},
+        {"stop_id": "adilabad-bs", "name": "Adilabad Bus Stand", "city": "Adilabad", "lat": 19.6641, "lng": 78.5320, "seq": 3, "cum_km": 331}
+      ]
+    },
+    {
+      "id": "tsrtc-hyd-mahbubnagar-001",
+      "name": "Hyderabad – Mahbubnagar Express",
+      "operator": "TSRTC",
+      "corridor": true,
+      "origin_stop_id": "hyd-mgbs",
+      "destination_stop_id": "mahbubnagar-bs",
+      "origin_city": "Hyderabad",
+      "destination_city": "Mahbubnagar",
+      "distance_km": 116,
+      "bus_types": ["Express", "Ordinary"],
+      "stops": [
+        {"stop_id": "hyd-mgbs", "name": "MGBS (Mahatma Gandhi Bus Station)", "city": "Hyderabad", "lat": 17.3616, "lng": 78.4747, "seq": 1, "cum_km": 0},
+        {"stop_id": "mahbubnagar-bs", "name": "Mahbubnagar Bus Stand", "city": "Mahbubnagar", "lat": 16.7488, "lng": 77.9864, "seq": 2, "cum_km": 116}
+      ]
+    }
+  ]
+}

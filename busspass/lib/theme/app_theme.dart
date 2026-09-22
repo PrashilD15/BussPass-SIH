@@ -80,44 +80,90 @@ class AppMotion {
   static const Duration stagger = Duration(milliseconds: 45);
 }
 
-/// Elevation as a shadow list, since Material 3 tonal elevation reads muddy
-/// against the warm paper palette.
+/// Elevation as a layered shadow list, since Material 3 tonal elevation reads
+/// muddy against the warm paper palette. Two soft layers plus a faint contact
+/// shadow read as depth rather than a single muddy blob.
 class AppShadow {
   AppShadow._();
 
+  /// Resting card on the canvas — a whisper of separation.
   static List<BoxShadow> card(Color base) => [
         BoxShadow(
-          color: base.withValues(alpha: 0.04),
-          blurRadius: 8,
-          offset: const Offset(0, 2),
+          color: base.withValues(alpha: 0.05),
+          blurRadius: 2,
+          offset: const Offset(0, 1),
+        ),
+        BoxShadow(
+          color: base.withValues(alpha: 0.05),
+          blurRadius: 14,
+          offset: const Offset(0, 4),
         ),
       ];
 
+  /// A card or panel lifted above its neighbours — for the hero, sheets,
+  /// primary actions.
   static List<BoxShadow> raised(Color base) => [
         BoxShadow(
-          color: base.withValues(alpha: 0.08),
-          blurRadius: 20,
-          offset: const Offset(0, 6),
+          color: base.withValues(alpha: 0.09),
+          blurRadius: 4,
+          offset: const Offset(0, 2),
+        ),
+        BoxShadow(
+          color: base.withValues(alpha: 0.10),
+          blurRadius: 24,
+          offset: const Offset(0, 10),
         ),
       ];
 
+  /// A genuinely floating element — bottom sheets, the nav bar, FABs.
   static List<BoxShadow> floating(Color base) => [
         BoxShadow(
+          color: base.withValues(alpha: 0.12),
+          blurRadius: 6,
+          offset: const Offset(0, 3),
+        ),
+        BoxShadow(
           color: base.withValues(alpha: 0.14),
-          blurRadius: 28,
-          offset: const Offset(0, 10),
+          blurRadius: 32,
+          offset: const Offset(0, 14),
+        ),
+      ];
+
+  /// A brand-tinted glow for the single hero element per screen — the live
+  /// bus sheet, the active-ticket card. Use sparingly: one per screen.
+  static List<BoxShadow> glowBrand(Color brand) => [
+        BoxShadow(
+          color: brand.withValues(alpha: 0.28),
+          blurRadius: 20,
+          offset: const Offset(0, 8),
+        ),
+        BoxShadow(
+          color: brand.withValues(alpha: 0.12),
+          blurRadius: 44,
+          offset: const Offset(0, 16),
         ),
       ];
 }
 
+/// Indic script fallback chain appended to every text style.
+///
+/// Google Fonts' Inter has no Devanagari or Kannada glyphs, so Marathi/Hindi
+/// and Kannada strings otherwise fall back to whatever the platform picks —
+/// inconsistently, and blank on offline first-run. The bundled Noto families
+/// (declared in pubspec.yaml) make per-glyph fallback deterministic.
+const List<String> _indicFallback = [
+  'NotoSansDevanagari',
+  'NotoSansKannada',
+];
+
 /// Build the light theme.
-ThemeData buildLightTheme() => _build(AppPalette.light, Brightness.light);
+ThemeData buildLightTheme(AppPalette palette) => _build(palette, Brightness.light);
 
 /// Build the dark theme.
-ThemeData buildDarkTheme() => _build(AppPalette.dark, Brightness.dark);
+ThemeData buildDarkTheme(AppPalette palette) => _build(palette, Brightness.dark);
 
-/// Retained for the existing `main.dart` call site.
-ThemeData buildAppTheme() => buildLightTheme();
+/// Retained for the existing `main.dart` call site if needed without dynamic palette.
+ThemeData buildAppTheme() => buildLightTheme(AppPalette.light);
 
 ThemeData _build(AppPalette palette, Brightness brightness) {
   final scheme = ColorScheme(
@@ -175,23 +221,24 @@ ThemeData _build(AppPalette palette, Brightness brightness) {
         letterSpacing: spacing,
         height: height,
         color: color ?? palette.ink,
+        fontFamilyFallback: _indicFallback,
       );
 
   final textTheme = base.copyWith(
     displayLarge: style(base.displayLarge,
-        size: 40, weight: FontWeight.w800, spacing: -1.6, height: 1.1),
+        size: 40, weight: FontWeight.w700, spacing: -1.6, height: 1.08),
     displayMedium: style(base.displayMedium,
-        size: 34, weight: FontWeight.w800, spacing: -1.3, height: 1.12),
+        size: 34, weight: FontWeight.w700, spacing: -1.3, height: 1.1),
     displaySmall: style(base.displaySmall,
-        size: 30, weight: FontWeight.w800, spacing: -1.1, height: 1.15),
+        size: 30, weight: FontWeight.w700, spacing: -1.1, height: 1.12),
     headlineLarge: style(base.headlineLarge,
-        size: 27, weight: FontWeight.w800, spacing: -0.8, height: 1.18),
+        size: 27, weight: FontWeight.w700, spacing: -0.8, height: 1.16),
     headlineMedium: style(base.headlineMedium,
         size: 23, weight: FontWeight.w700, spacing: -0.5, height: 1.2),
     headlineSmall: style(base.headlineSmall,
-        size: 20, weight: FontWeight.w700, spacing: -0.3, height: 1.24),
+        size: 20, weight: FontWeight.w600, spacing: -0.3, height: 1.24),
     titleLarge: style(base.titleLarge,
-        size: 18, weight: FontWeight.w700, spacing: -0.3, height: 1.28),
+        size: 18, weight: FontWeight.w600, spacing: -0.3, height: 1.28),
     titleMedium: style(base.titleMedium,
         size: 16, weight: FontWeight.w600, spacing: -0.1, height: 1.32),
     titleSmall: style(base.titleSmall,
@@ -237,7 +284,7 @@ ThemeData _build(AppPalette palette, Brightness brightness) {
       foregroundColor: palette.ink,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
-      scrolledUnderElevation: 0,
+      scrolledUnderElevation: 0.5,
       centerTitle: false,
       titleTextStyle: textTheme.titleLarge,
       systemOverlayStyle: brightness == Brightness.light
@@ -248,7 +295,8 @@ ThemeData _build(AppPalette palette, Brightness brightness) {
 
     // Buttons derive foreground from the scheme, so a custom background can
     // never produce white-on-white — the bug that made the old Google sign-in
-    // button invisible.
+    // button invisible. Primary surfaces carry a soft brand-tinted shadow for a
+    // fractional lift that still reads as a flat action system.
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: palette.brand,
@@ -259,6 +307,7 @@ ThemeData _build(AppPalette palette, Brightness brightness) {
         minimumSize: const Size.fromHeight(AppSpacing.controlHeight),
         shape: const RoundedRectangleBorder(borderRadius: AppSpacing.brMd),
         textStyle: textTheme.labelLarge?.copyWith(fontSize: 15),
+        shadowColor: palette.brand.withValues(alpha: 0.35),
       ),
     ),
 
@@ -269,6 +318,8 @@ ThemeData _build(AppPalette palette, Brightness brightness) {
         minimumSize: const Size.fromHeight(AppSpacing.controlHeight),
         shape: const RoundedRectangleBorder(borderRadius: AppSpacing.brMd),
         textStyle: textTheme.labelLarge?.copyWith(fontSize: 15),
+        elevation: 0,
+        shadowColor: palette.brand.withValues(alpha: 0.35),
       ),
     ),
 
@@ -322,7 +373,8 @@ ThemeData _build(AppPalette palette, Brightness brightness) {
     cardTheme: CardThemeData(
       color: palette.surface,
       surfaceTintColor: Colors.transparent,
-      elevation: 0,
+      elevation: 0.5,
+      shadowColor: Colors.black.withValues(alpha: 0.05),
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: AppSpacing.brLg,
@@ -353,8 +405,9 @@ ThemeData _build(AppPalette palette, Brightness brightness) {
       backgroundColor: palette.surfaceRaised,
       surfaceTintColor: Colors.transparent,
       modalBackgroundColor: palette.surfaceRaised,
-      elevation: 0,
-      modalElevation: 0,
+      elevation: 12,
+      modalElevation: 12,
+      shadowColor: Colors.black.withValues(alpha: 0.14),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppSpacing.radiusXl),

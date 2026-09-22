@@ -1,0 +1,107 @@
+{
+  "stc": "APSRTC",
+  "state": "Andhra Pradesh",
+  "stops": [
+    {"id": "vijayawada-bs", "name": "Vijayawada Pandit Nehru Bus Station", "city": "Vijayawada", "depot": "Vijayawada", "district": "Krishna", "lat": 16.5062, "lng": 80.6480, "tier": 3},
+    {"id": "visakhapatnam-bs", "name": "Visakhapatnam RTC Complex", "city": "Visakhapatnam", "depot": "Visakhapatnam", "district": "Visakhapatnam", "lat": 17.6868, "lng": 83.2185, "tier": 3},
+    {"id": "tirupati-bs", "name": "Tirupati Bus Stand", "city": "Tirupati", "depot": "Tirupati", "district": "Chittoor", "lat": 13.6288, "lng": 79.4192, "tier": 3},
+    {"id": "guntur-bs", "name": "Guntur Bus Stand", "city": "Guntur", "depot": "Guntur", "district": "Guntur", "lat": 16.3067, "lng": 80.4365, "tier": 3},
+    {"id": "kurnool-bs", "name": "Kurnool Bus Stand", "city": "Kurnool", "depot": "Kurnool", "district": "Kurnool", "lat": 15.8281, "lng": 78.0373, "tier": 2},
+    {"id": "nellore-bs", "name": "Nellore Bus Stand", "city": "Nellore", "depot": "Nellore", "district": "SPSR Nellore", "lat": 14.4426, "lng": 79.9865, "tier": 2},
+    {"id": "kakinada-bs", "name": "Kakinada Bus Stand", "city": "Kakinada", "depot": "Kakinada", "district": "East Godavari", "lat": 16.9891, "lng": 82.2475, "tier": 2},
+    {"id": "rajahmundry-bs", "name": "Rajahmundry Bus Stand", "city": "Rajahmundry", "depot": "Rajahmundry", "district": "East Godavari", "lat": 17.0005, "lng": 81.7799, "tier": 2},
+    {"id": "anantapur-bs", "name": "Anantapur Bus Stand", "city": "Anantapur", "depot": "Anantapur", "district": "Anantapur", "lat": 14.6819, "lng": 77.6006, "tier": 2},
+    {"id": "eluru-bs", "name": "Eluru Bus Stand", "city": "Eluru", "depot": "Eluru", "district": "West Godavari", "lat": 16.7107, "lng": 81.0952, "tier": 2},
+    {"id": "ongole-bs", "name": "Ongole Bus Stand", "city": "Ongole", "depot": "Ongole", "district": "Prakasam", "lat": 15.5057, "lng": 80.0499, "tier": 2}
+  ],
+  "routes": [
+    {
+      "id": "apsrtc-vja-vzg-001",
+      "name": "Vijayawada – Visakhapatnam Garuda Plus",
+      "operator": "APSRTC",
+      "corridor": true,
+      "origin_stop_id": "vijayawada-bs",
+      "destination_stop_id": "visakhapatnam-bs",
+      "origin_city": "Vijayawada",
+      "destination_city": "Visakhapatnam",
+      "distance_km": 348,
+      "bus_types": ["Garuda Plus", "Super Luxury"],
+      "stops": [
+        {"stop_id": "vijayawada-bs", "name": "Vijayawada Pandit Nehru Bus Station", "city": "Vijayawada", "lat": 16.5062, "lng": 80.6480, "seq": 1, "cum_km": 0},
+        {"stop_id": "eluru-bs", "name": "Eluru Bus Stand", "city": "Eluru", "lat": 16.7107, "lng": 81.0952, "seq": 2, "cum_km": 65},
+        {"stop_id": "rajahmundry-bs", "name": "Rajahmundry Bus Stand", "city": "Rajahmundry", "lat": 17.0005, "lng": 81.7799, "seq": 3, "cum_km": 154},
+        {"stop_id": "kakinada-bs", "name": "Kakinada Bus Stand", "city": "Kakinada", "lat": 16.9891, "lng": 82.2475, "seq": 4, "cum_km": 198},
+        {"stop_id": "visakhapatnam-bs", "name": "Visakhapatnam RTC Complex", "city": "Visakhapatnam", "lat": 17.6868, "lng": 83.2185, "seq": 5, "cum_km": 348}
+      ]
+    },
+    {
+      "id": "apsrtc-vja-tpt-001",
+      "name": "Vijayawada – Tirupati Express",
+      "operator": "APSRTC",
+      "corridor": true,
+      "origin_stop_id": "vijayawada-bs",
+      "destination_stop_id": "tirupati-bs",
+      "origin_city": "Vijayawada",
+      "destination_city": "Tirupati",
+      "distance_km": 396,
+      "bus_types": ["Super Luxury", "Express"],
+      "stops": [
+        {"stop_id": "vijayawada-bs", "name": "Vijayawada Pandit Nehru Bus Station", "city": "Vijayawada", "lat": 16.5062, "lng": 80.6480, "seq": 1, "cum_km": 0},
+        {"stop_id": "guntur-bs", "name": "Guntur Bus Stand", "city": "Guntur", "lat": 16.3067, "lng": 80.4365, "seq": 2, "cum_km": 33},
+        {"stop_id": "ongole-bs", "name": "Ongole Bus Stand", "city": "Ongole", "lat": 15.5057, "lng": 80.0499, "seq": 3, "cum_km": 155},
+        {"stop_id": "nellore-bs", "name": "Nellore Bus Stand", "city": "Nellore", "lat": 14.4426, "lng": 79.9865, "seq": 4, "cum_km": 277},
+        {"stop_id": "tirupati-bs", "name": "Tirupati Bus Stand", "city": "Tirupati", "lat": 13.6288, "lng": 79.4192, "seq": 5, "cum_km": 396}
+      ]
+    },
+    {
+      "id": "apsrtc-vja-kurnool-001",
+      "name": "Vijayawada – Kurnool Express",
+      "operator": "APSRTC",
+      "corridor": true,
+      "origin_stop_id": "vijayawada-bs",
+      "destination_stop_id": "kurnool-bs",
+      "origin_city": "Vijayawada",
+      "destination_city": "Kurnool",
+      "distance_km": 261,
+      "bus_types": ["Super Luxury", "Express"],
+      "stops": [
+        {"stop_id": "vijayawada-bs", "name": "Vijayawada Pandit Nehru Bus Station", "city": "Vijayawada", "lat": 16.5062, "lng": 80.6480, "seq": 1, "cum_km": 0},
+        {"stop_id": "guntur-bs", "name": "Guntur Bus Stand", "city": "Guntur", "lat": 16.3067, "lng": 80.4365, "seq": 2, "cum_km": 33},
+        {"stop_id": "kurnool-bs", "name": "Kurnool Bus Stand", "city": "Kurnool", "lat": 15.8281, "lng": 78.0373, "seq": 3, "cum_km": 261}
+      ]
+    },
+    {
+      "id": "apsrtc-vzg-kakinada-001",
+      "name": "Visakhapatnam – Kakinada Express",
+      "operator": "APSRTC",
+      "corridor": true,
+      "origin_stop_id": "visakhapatnam-bs",
+      "destination_stop_id": "kakinada-bs",
+      "origin_city": "Visakhapatnam",
+      "destination_city": "Kakinada",
+      "distance_km": 175,
+      "bus_types": ["Express", "Ordinary"],
+      "stops": [
+        {"stop_id": "visakhapatnam-bs", "name": "Visakhapatnam RTC Complex", "city": "Visakhapatnam", "lat": 17.6868, "lng": 83.2185, "seq": 1, "cum_km": 0},
+        {"stop_id": "rajahmundry-bs", "name": "Rajahmundry Bus Stand", "city": "Rajahmundry", "lat": 17.0005, "lng": 81.7799, "seq": 2, "cum_km": 125},
+        {"stop_id": "kakinada-bs", "name": "Kakinada Bus Stand", "city": "Kakinada", "lat": 16.9891, "lng": 82.2475, "seq": 3, "cum_km": 175}
+      ]
+    },
+    {
+      "id": "apsrtc-tpt-anantapur-001",
+      "name": "Tirupati – Anantapur Express",
+      "operator": "APSRTC",
+      "corridor": true,
+      "origin_stop_id": "tirupati-bs",
+      "destination_stop_id": "anantapur-bs",
+      "origin_city": "Tirupati",
+      "destination_city": "Anantapur",
+      "distance_km": 273,
+      "bus_types": ["Express", "Ordinary"],
+      "stops": [
+        {"stop_id": "tirupati-bs", "name": "Tirupati Bus Stand", "city": "Tirupati", "lat": 13.6288, "lng": 79.4192, "seq": 1, "cum_km": 0},
+        {"stop_id": "anantapur-bs", "name": "Anantapur Bus Stand", "city": "Anantapur", "lat": 14.6819, "lng": 77.6006, "seq": 2, "cum_km": 273}
+      ]
+    }
+  ]
+}

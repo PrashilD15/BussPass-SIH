@@ -92,7 +92,7 @@ const EXTRA_PLACES = [
   { id: 'paithan', name: 'Paithan Bus Stand', city: 'Paithan', lat: 19.4800, lng: 75.3800, district: 'Chhatrapati Sambhaji Nagar' },
   { id: 'vaijapur', name: 'Vaijapur Bus Stand', city: 'Vaijapur', lat: 19.9260, lng: 74.7280, district: 'Chhatrapati Sambhaji Nagar' },
   { id: 'shegaon', name: 'Shegaon Bus Stand', city: 'Shegaon', lat: 20.7936, lng: 76.6947, district: 'Buldhana' },
-  { id: 'rahuri', name: 'Rahuri Bus Stand', city: 'Rahuri', lat: 19.3900, lng: 74.6500, district: 'Ahmednagar' },
+  { id: 'rahuri', name: 'Rahuri Bus Stand', city: 'Rahuri', lat: 19.3900, lng: 74.6500, district: 'Ahilyanagar' },
   { id: 'niphad', name: 'Niphad Bus Stand', city: 'Niphad', lat: 20.0833, lng: 74.1103, district: 'Nashik' },
   { id: 'chandwad', name: 'Chandwad Bus Stand', city: 'Chandwad', lat: 20.3300, lng: 74.2400, district: 'Nashik' },
   { id: 'chalisgaon', name: 'Chalisgaon Bus Stand', city: 'Chalisgaon', lat: 20.4600, lng: 75.0100, district: 'Jalgaon' },
@@ -104,7 +104,7 @@ const EXTRA_PLACES = [
   { id: 'akkalkot', name: 'Akkalkot Bus Stand', city: 'Akkalkot', lat: 17.5200, lng: 76.2000, district: 'Solapur' },
   { id: 'baramati', name: 'Baramati Bus Stand', city: 'Baramati', lat: 18.1514, lng: 74.5815, district: 'Pune' },
   { id: 'kalyan', name: 'Kalyan Bus Stand', city: 'Kalyan', lat: 19.2403, lng: 73.1305, district: 'Thane' },
-  { id: 'bhandardara', name: 'Bhandardara Bus Stop', city: 'Bhandardara', lat: 19.5400, lng: 73.7500, district: 'Ahmednagar' },
+  { id: 'bhandardara', name: 'Bhandardara Bus Stop', city: 'Bhandardara', lat: 19.5400, lng: 73.7500, district: 'Ahilyanagar' },
   { id: 'surgana', name: 'Surgana Bus Stand', city: 'Surgana', lat: 20.5600, lng: 73.6300, district: 'Nashik' },
   { id: 'vani', name: 'Vani Bus Stand', city: 'Vani', lat: 20.3200, lng: 73.8900, district: 'Nashik' },
   { id: 'bhagur', name: 'Bhagur Bus Stand', city: 'Bhagur', lat: 19.9200, lng: 73.8900, district: 'Nashik' },
@@ -115,6 +115,7 @@ const EXTRA_PLACES = [
 // Scraped destination string → canonical stop id.
 const DESTINATION_ALIASES = {
   'ahemadnagar': 'ahmednagar',
+  'ahmadnagar': 'ahmednagar',
   'ahmednagar': 'ahmednagar',
   'nagar': 'ahmednagar',
   'a nagar': 'ahmednagar',
@@ -577,12 +578,20 @@ for (const row of rawTimetables) {
   // Every row is retained for the Timetables screen, resolvable or not — a
   // departure board is useful even when the destination has no stand record.
   const destId = resolveStopId(destination);
+  // Display the canonical stand name when the board's destination resolves to a
+  // real stop — a scraped "AHEMADNAGAR"/"AHMADNAGAR" must read "Ahilyanagar", the
+  // stand's current official name, not the board's spelling.
+  const destStop = destId ? stops.get(destId) : null;
+  const displayDestination = destStop ? destStop.city : titleCase(destination);
   timetables.push({
     origin_stop_id: origin.id,
     origin_city: origin.city,
-    destination: titleCase(destination),
+    destination: displayDestination,
     destination_stop_id: destId || null,
-    via: via.map(titleCase),
+    via: via.map((v) => {
+      const viaStop = resolveStopId(v);
+      return viaStop ? (stops.get(viaStop)?.city || titleCase(v)) : titleCase(v);
+    }),
     bus_type: busType,
     distance_km: km != null ? round1(km) : null,
     departures: minutes,
@@ -598,7 +607,6 @@ for (const row of rawTimetables) {
   }
 
   const originStop = stops.get(origin.id);
-  const destStop = stops.get(destId);
   if (!originStop || !destStop) continue;
 
   const verdict = validatePairDistance(originStop, destStop, km);

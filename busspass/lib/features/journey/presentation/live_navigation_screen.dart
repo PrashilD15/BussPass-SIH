@@ -8,16 +8,20 @@ import 'package:busspass/data/providers/directions_provider.dart';
 import 'package:busspass/core/theme/map_style.dart';
 import 'package:busspass/theme/app_colors.dart';
 import 'package:busspass/theme/app_theme.dart';
+import 'package:busspass/core/utils/map_marker_utils.dart';
+import 'package:busspass/data/providers/app_providers.dart';
 
 /// Live map tracking for the currently-travelled leg of an itinerary.
 class LiveNavigationScreen extends ConsumerStatefulWidget {
   final Itinerary itinerary;
   final int legIndex;
+  final String? busId;
 
   const LiveNavigationScreen({
     super.key,
     required this.itinerary,
     required this.legIndex,
+    this.busId,
   });
 
   @override
@@ -27,6 +31,39 @@ class LiveNavigationScreen extends ConsumerStatefulWidget {
 
 class _LiveNavigationScreenState extends ConsumerState<LiveNavigationScreen> {
   bool _isAlarmOn = false;
+  BitmapDescriptor? _destMarker;
+  BitmapDescriptor? _viaMarker;
+  final Map<String, BitmapDescriptor> _viaMarkersMap = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMarkers();
+  }
+
+  Future<void> _loadMarkers() async {
+    final destStop = ref.read(networkProvider).value?.stopById(_leg.alightStop.id);
+    if (destStop != null && destStop.imageUrl != null) {
+      _destMarker = await MapMarkerUtils.createImageMarker(
+          imageUrl: destStop.imageUrl!, color: Colors.green, size: 56);
+    } else {
+      _destMarker = await MapMarkerUtils.createCustomMarker(
+          color: Colors.green, size: 56, isDestination: true);
+    }
+
+    _viaMarker = await MapMarkerUtils.createCustomMarker(
+        color: Colors.orange, size: 36);
+
+    final network = ref.read(networkProvider);
+    for (final s in _leg.intermediateStops) {
+      final netStop = network.value?.stopById(s.stopId);
+      if (netStop != null && netStop.imageUrl != null) {
+        _viaMarkersMap[s.stopId] = await MapMarkerUtils.createImageMarker(
+            imageUrl: netStop.imageUrl!, color: Colors.orange, size: 36);
+      }
+    }
+    if (mounted) setState(() {});
+  }
 
   JourneyLeg get _leg => widget.itinerary.legs[widget.legIndex];
 
@@ -69,6 +106,7 @@ class _LiveNavigationScreenState extends ConsumerState<LiveNavigationScreen> {
             initialCameraPosition: CameraPosition(
               target: points.last,
               zoom: 14,
+              tilt: 50.0,
             ),
             style: kModernMapStyleJson,
             zoomControlsEnabled: false,
@@ -97,8 +135,9 @@ class _LiveNavigationScreenState extends ConsumerState<LiveNavigationScreen> {
               Marker(
                 markerId: const MarkerId('dest'),
                 position: points.last,
-                icon: BitmapDescriptor.defaultMarkerWithHue(
+                icon: _destMarker ?? BitmapDescriptor.defaultMarkerWithHue(
                     BitmapDescriptor.hueGreen),
+                anchor: _destMarker != null ? const Offset(0.5, 1.0) : const Offset(0.5, 1.0),
               ),
             },
           ),
@@ -349,8 +388,9 @@ class _LiveNavigationScreenState extends ConsumerState<LiveNavigationScreen> {
         .map((s) => Marker(
               markerId: MarkerId('via-${leg.route.id}-${s.stopId}'),
               position: LatLng(s.lat, s.lng),
-              icon: BitmapDescriptor.defaultMarkerWithHue(
+              icon: _viaMarkersMap[s.stopId] ?? _viaMarker ?? BitmapDescriptor.defaultMarkerWithHue(
                   BitmapDescriptor.hueOrange),
+              anchor: const Offset(0.5, 1.0),
             ))
         .toSet();
   }

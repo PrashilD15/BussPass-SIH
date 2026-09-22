@@ -33,6 +33,7 @@ import 'package:busspass/core/math/fare_engine.dart';
 import 'package:busspass/core/math/geo.dart';
 import 'package:busspass/core/math/schedule.dart';
 import 'package:busspass/data/models/network_models.dart';
+import 'package:busspass/data/providers/app_providers.dart';
 
 /// Tuning constants for the planner. Grouped so they are visible and adjustable
 /// rather than scattered as magic numbers.
@@ -416,11 +417,12 @@ class JourneyPlanner {
   /// [preference]. An empty list means genuinely no path exists within the
   /// transfer and wait limits.
   List<Itinerary> plan({
-    required String originId,
-    required String destinationId,
-    required DateTime departAfter,
-    JourneyPreference preference = JourneyPreference.fastest,
+    required JourneyQuery query,
   }) {
+    final originId = query.originId;
+    final destinationId = query.destinationId;
+    final departAfter = query.departAfter;
+    final preference = query.preference;
     if (originId == destinationId) return const [];
     if (graph.network.stopById(originId) == null) return const [];
     if (graph.network.stopById(destinationId) == null) return const [];
@@ -441,14 +443,14 @@ class JourneyPlanner {
     collect(_directItineraries(
       originId: originId,
       destinationId: destinationId,
-      departAfter: departAfter,
+      query: query,
     ));
 
     // Pass 2 — time-dependent Dijkstra under the standard config.
     collect(_search(
       originId: originId,
       destinationId: destinationId,
-      departAfter: departAfter,
+      query: query,
       config: config,
     ));
 
@@ -463,7 +465,7 @@ class JourneyPlanner {
       collect(_search(
         originId: originId,
         destinationId: destinationId,
-        departAfter: departAfter,
+        query: query,
         config: PlannerConfig.comfort,
       ));
 
@@ -471,7 +473,7 @@ class JourneyPlanner {
       collect(_search(
         originId: originId,
         destinationId: destinationId,
-        departAfter: departAfter,
+        query: query,
         config: PlannerConfig.fastest,
       ));
     }
@@ -486,7 +488,7 @@ class JourneyPlanner {
   List<Itinerary> _directItineraries({
     required String originId,
     required String destinationId,
-    required DateTime departAfter,
+    required JourneyQuery query,
     int departuresPerService = 3,
   }) {
     final out = <Itinerary>[];
@@ -505,7 +507,7 @@ class JourneyPlanner {
         service: call.service,
         route: route,
         boardSeq: call.seq,
-        after: departAfter,
+        after: query.departAfter,
         count: departuresPerService,
       );
 
@@ -516,6 +518,9 @@ class JourneyPlanner {
           boardSeq: call.seq,
           alightSeq: alightRef.seq,
           departsAt: departure,
+          adultCount: query.adultCount,
+          ladyCount: query.ladyCount,
+          childCount: query.childCount,
         );
         if (leg != null) out.add(Itinerary(legs: [leg], transfers: const []));
       }
@@ -527,7 +532,7 @@ class JourneyPlanner {
   List<Itinerary> _search({
     required String originId,
     required String destinationId,
-    required DateTime departAfter,
+    required JourneyQuery query,
     required PlannerConfig config,
   }) {
     // Best cost seen per (stop, transfers) so a cheaper path with more
@@ -538,24 +543,27 @@ class JourneyPlanner {
 
     queue.add(_Label(
       stopId: originId,
-      arrival: departAfter,
+      arrival: query.departAfter,
       cost: 0,
       transfers: 0,
     ));
 
     // Also seed sibling stands in the origin city — a rider at Swargate can
     // walk to Shivajinagar if that is where the bus actually leaves from.
+    // [EDIT]: Disabled to ensure strict routing from the explicitly selected origin stop.
+    /*
     for (final siblingId in graph.siblingStops(originId)) {
       final walk = _walkBetween(originId, siblingId);
       if (walk == null) continue;
       queue.add(_Label(
         stopId: siblingId,
-        arrival: departAfter.add(Duration(minutes: walk.minutes)),
+        arrival: query.departAfter.add(Duration(minutes: walk.minutes)),
         cost: walk.minutes,
         transfers: 0,
         walkKm: walk.km,
       ));
     }
+    */
 
     var expansions = 0;
     const expansionCap = 40000; // hard bound; the graph is ~90 stops
@@ -626,7 +634,7 @@ class JourneyPlanner {
           if (rideMinutes <= 0) continue;
 
           final arrival = departure.add(Duration(minutes: rideMinutes));
-          final elapsed = arrival.difference(departAfter).inMinutes;
+          final elapsed = arrival.difference(query.departAfter).inMinutes;
           final cost = elapsed + transfers * config.transferPenaltyMinutes;
 
           final nextTier = call.service.serviceClass.tier;
@@ -643,6 +651,9 @@ class JourneyPlanner {
             boardSeq: call.seq,
             alightSeq: stopRef.seq,
             departsAt: departure,
+            adultCount: query.adultCount,
+            ladyCount: query.ladyCount,
+            childCount: query.childCount,
           );
           if (leg == null) continue;
 
@@ -797,6 +808,12 @@ class JourneyPlanner {
   /// e.g. after a Firestore overlay arrives.
   static void invalidateCaches() => _offsetCache.clear();
 
+  /// Modelled arrival offsets (minutes from the service origin) at each stop
+  /// sequence. Public so alert scheduling and other consumers can derive stop
+  /// times without duplicating the direction/cache logic.
+  Map<int, int> boardOffsets(TransitService service, TransitRoute route) =>
+      _boardOffsets(service, route);
+
   Map<int, int> _boardOffsets(TransitService service, TransitRoute route) {
     final cached = _offsetCache[service.id];
     if (cached != null) return cached;
@@ -830,6 +847,9 @@ class JourneyPlanner {
     required int boardSeq,
     required int alightSeq,
     required DateTime departsAt,
+    required int adultCount,
+    required int ladyCount,
+    required int childCount,
   }) {
     final boardRef = route.stopRefBySeq(boardSeq);
     final alightRef = route.stopRefBySeq(alightSeq);
@@ -867,7 +887,14 @@ class JourneyPlanner {
       departsAt: departsAt,
       arrivesAt: departsAt.add(Duration(minutes: estimate.totalMinutes)),
       estimate: estimate,
-      fare: FareEngine.baseFare(distanceKm, service.serviceClass.key),
+      fare: FareEngine.calculateTotalTripFare(
+        distanceKm, 
+        service.serviceClass.key, 
+        adultCount, 
+        ladyCount, 
+        childCount,
+        operatorName: route.operatorName
+      ),
       intermediateStops: intermediate,
     );
   }
@@ -921,14 +948,15 @@ class JourneyPlanner {
   ) {
     switch (preference) {
       case JourneyPreference.fastest:
-        // Total elapsed from *now*, so a bus leaving sooner wins even if its
-        // in-vehicle time is longer.
+        // Priority 1: Direct buses (lowest transfers)
+        // Priority 2: Shortest arrival time
         items.sort((a, b) {
+          final byTransfers = a.transferCount.compareTo(b.transferCount);
+          if (byTransfers != 0) return byTransfers;
+
           final aEnd = a.arrivesAt.difference(now).inMinutes;
           final bEnd = b.arrivesAt.difference(now).inMinutes;
-          final byEnd = aEnd.compareTo(bEnd);
-          if (byEnd != 0) return byEnd;
-          return a.transferCount.compareTo(b.transferCount);
+          return aEnd.compareTo(bEnd);
         });
       case JourneyPreference.cheapest:
         items.sort((a, b) {

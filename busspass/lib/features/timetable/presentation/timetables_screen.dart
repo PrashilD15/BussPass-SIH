@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:busspass/core/math/schedule.dart';
 import 'package:busspass/data/models/network_models.dart';
+import 'package:busspass/core/math/occupancy_engine.dart';
 import 'package:busspass/data/providers/app_providers.dart';
 import 'package:busspass/theme/app_colors.dart';
 import 'package:busspass/theme/app_theme.dart';
@@ -405,12 +406,17 @@ class _DepartureCard extends StatelessWidget {
                   ),
                 ],
                 const Spacer(),
-                if (next != null)
+                if (next != null) ...[
+                  // Modelled crowd for the departure's likely load — peak-aware
+                  // via the engine, labelled as a model, not a measurement.
+                  _OccupancyBadge(departureMinute: next.minuteOfDay, busType: row.busType),
+                  const SizedBox(width: AppSpacing.sm),
                   _CountdownBadge(
                     minutesUntil: next.minutesUntil,
                     palette: palette,
                     theme: theme,
                   ),
+                ],
               ],
             ),
           ),
@@ -503,6 +509,26 @@ class _DepartureCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+
+/// Peak-aware crowd pill for a departure, modelled by [OccupancyEngine].
+/// It estimates demand shape, not a headcount — the tooltip says so.
+class _OccupancyBadge extends StatelessWidget {
+  final int departureMinute;
+  final String busType;
+  const _OccupancyBadge({required this.departureMinute, required this.busType});
+
+  @override
+  Widget build(BuildContext context) {
+    final serviceClass = ServiceClassCatalog.byKey(busType);
+    final at = DateTime(2000, 1, 1, departureMinute ~/ 60, departureMinute % 60);
+    final level =
+        OccupancyEngine.model(serviceClass: serviceClass, at: at).level;
+    return Tooltip(
+      message: 'Estimated crowd for this time — not a live headcount',
+      child: OccupancyPill(level: level),
+    );
+  }
+}
 
 class _CountdownBadge extends StatelessWidget {
   final int minutesUntil;

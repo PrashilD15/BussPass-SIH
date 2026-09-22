@@ -97,6 +97,14 @@ class AppPalette extends ThemeExtension<AppPalette> {
   /// Live bus marker fill.
   final Color liveBus;
 
+  // ── Gradients ──────────────────────────────────────────────────────────
+  /// The ONE sanctioned brand gradient — hero surfaces, active chrome.
+  /// Use with a begin/end of `Alignment.topLeft`/`bottomRight`.
+  final List<Color> gradientBrand;
+
+  /// The ONE sanctioned accent gradient — fare/monetary emphasis.
+  final List<Color> gradientAccent;
+
   const AppPalette({
     required this.ink,
     required this.inkSoft,
@@ -125,6 +133,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
     required this.routeLine,
     required this.routeTravelled,
     required this.liveBus,
+    required this.gradientBrand,
+    required this.gradientAccent,
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -162,6 +172,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
     routeLine:      Color(0xFF1B8A80),
     routeTravelled: Color(0xFFB0B6C8),
     liveBus:        Color(0xFFCA8A24),
+    gradientBrand:  [Color(0xFF1B8A80), Color(0xFF136B62)],
+    gradientAccent: [Color(0xFFCA8A24), Color(0xFFB07311)],
   );
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -187,7 +199,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
     hairline:      Color(0xFF282E45),
     hairlineStrong:Color(0xFF3A4266),
     accent:      Color(0xFFE8A83A),
-    accentLight: Color(0xFF2C1E02),
+    accentLight: Color(0xFF33260A),
     success:      Color(0xFF4DC898),
     successLight: Color(0xFF092214),
     warning:      Color(0xFFE8A83A),
@@ -199,6 +211,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
     routeLine:      Color(0xFF40C4B8),
     routeTravelled: Color(0xFF4C526E),
     liveBus:        Color(0xFFE8A83A),
+    gradientBrand:  [Color(0xFF40C4B8), Color(0xFF2A8E85)],
+    gradientAccent: [Color(0xFFE8A83A), Color(0xFFC9861C)],
   );
 
   /// A translucent black scrim, for overlays on imagery and maps.
@@ -213,6 +227,17 @@ class AppPalette extends ThemeExtension<AppPalette> {
         _ => danger,
       };
 
+  /// The matching background tint for a crowd level — pair with
+  /// [forCrowdLevel] so occupancy chips get a consistent fg + bg as one
+  /// decision rather than two.
+  Color crowdTint(int levelIndex) => switch (levelIndex) {
+        0 => successLight,
+        1 => successLight,
+        2 => warningLight,
+        3 => warningLight,
+        _ => dangerLight,
+      };
+
   /// Colour for a service tier: ordinary through premium.
   Color forServiceTier(int tier) => switch (tier) {
         >= 4 => info,
@@ -220,6 +245,54 @@ class AppPalette extends ThemeExtension<AppPalette> {
         2 => accent,
         _ => inkMuted,
       };
+
+  /// Generate a dynamic palette based on the active State Transport Corporation.
+  /// Modifies the brand colors to match the STC identity while keeping the base calm and friendly.
+  factory AppPalette.forSTC(String stcCode, Brightness brightness) {
+    final base = brightness == Brightness.light ? light : dark;
+    
+    // MSRTC (Maharashtra): Calm Crimson / Warm Red
+    if (stcCode == 'MSRTC') {
+      return base.copyWith(
+        brand: brightness == Brightness.light ? const Color(0xFFC0402A) : const Color(0xFFEA7B6A),
+        brandDeep: brightness == Brightness.light ? const Color(0xFFA02B18) : const Color(0xFFF29B8C),
+        brandLight: brightness == Brightness.light ? const Color(0xFFFFEAE5) : const Color(0xFF2A0C08),
+        onBrand: const Color(0xFFFFFFFF),
+        gradientBrand: brightness == Brightness.light 
+            ? [const Color(0xFFC0402A), const Color(0xFFA02B18)]
+            : [const Color(0xFFEA7B6A), const Color(0xFFC0402A)],
+      );
+    }
+    
+    // GSRTC (Gujarat): Calm Azure / Ocean Blue
+    if (stcCode == 'GSRTC') {
+      return base.copyWith(
+        brand: brightness == Brightness.light ? const Color(0xFF2664A3) : const Color(0xFF679ED6),
+        brandDeep: brightness == Brightness.light ? const Color(0xFF1B497B) : const Color(0xFF8CBBED),
+        brandLight: brightness == Brightness.light ? const Color(0xFFE2F0FD) : const Color(0xFF0F2033),
+        onBrand: const Color(0xFFFFFFFF),
+        gradientBrand: brightness == Brightness.light 
+            ? [const Color(0xFF3575B8), const Color(0xFF1B497B)]
+            : [const Color(0xFF679ED6), const Color(0xFF3575B8)],
+      );
+    }
+
+    // KSRTC (Karnataka): Calm Forest Green
+    if (stcCode == 'KSRTC') {
+      return base.copyWith(
+        brand: brightness == Brightness.light ? const Color(0xFF287D5E) : const Color(0xFF4DC898),
+        brandDeep: brightness == Brightness.light ? const Color(0xFF195B42) : const Color(0xFF7AE0B8),
+        brandLight: brightness == Brightness.light ? const Color(0xFFE0F5EC) : const Color(0xFF0C2B1F),
+        onBrand: brightness == Brightness.light ? const Color(0xFFFFFFFF) : const Color(0xFF052B19),
+        gradientBrand: brightness == Brightness.light 
+            ? [const Color(0xFF287D5E), const Color(0xFF195B42)]
+            : [const Color(0xFF4DC898), const Color(0xFF287D5E)],
+      );
+    }
+
+    // Fallback: Default Teal / Saffron Dawn
+    return base;
+  }
 
   @override
   AppPalette copyWith({
@@ -250,6 +323,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
     Color? routeLine,
     Color? routeTravelled,
     Color? liveBus,
+    List<Color>? gradientBrand,
+    List<Color>? gradientAccent,
   }) {
     return AppPalette(
       ink: ink ?? this.ink,
@@ -279,6 +354,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
       routeLine: routeLine ?? this.routeLine,
       routeTravelled: routeTravelled ?? this.routeTravelled,
       liveBus: liveBus ?? this.liveBus,
+      gradientBrand: gradientBrand ?? this.gradientBrand,
+      gradientAccent: gradientAccent ?? this.gradientAccent,
     );
   }
 
@@ -286,6 +363,9 @@ class AppPalette extends ThemeExtension<AppPalette> {
   AppPalette lerp(ThemeExtension<AppPalette>? other, double t) {
     if (other is! AppPalette) return this;
     Color mix(Color a, Color b) => Color.lerp(a, b, t)!;
+    List<Color> mixList(List<Color> a, List<Color> b) => [
+          for (var i = 0; i < a.length && i < b.length; i++) mix(a[i], b[i]),
+        ];
     return AppPalette(
       ink: mix(ink, other.ink),
       inkSoft: mix(inkSoft, other.inkSoft),
@@ -314,6 +394,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
       routeLine: mix(routeLine, other.routeLine),
       routeTravelled: mix(routeTravelled, other.routeTravelled),
       liveBus: mix(liveBus, other.liveBus),
+      gradientBrand: mixList(gradientBrand, other.gradientBrand),
+      gradientAccent: mixList(gradientAccent, other.gradientAccent),
     );
   }
 }

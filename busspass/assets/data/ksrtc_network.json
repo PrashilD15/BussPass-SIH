@@ -1,0 +1,169 @@
+{
+  "stc": "KSRTC",
+  "state": "Karnataka",
+  "stops": [
+    {"id": "kia-bengaluru", "name": "Kempegowda Bus Terminal (Majestic)", "city": "Bengaluru", "depot": "Bengaluru Central", "district": "Bengaluru Urban", "lat": 12.9777, "lng": 77.5713, "tier": 3},
+    {"id": "mysuru-central", "name": "Mysuru Central Bus Stand", "city": "Mysuru", "depot": "Mysuru", "district": "Mysuru", "lat": 12.2958, "lng": 76.6394, "tier": 3},
+    {"id": "hubli-central", "name": "Hubli Bus Stand", "city": "Hubballi", "depot": "Hubballi", "district": "Dharwad", "lat": 15.3647, "lng": 75.1240, "tier": 3},
+    {"id": "dharwad", "name": "Dharwad Bus Stand", "city": "Dharwad", "depot": "Dharwad", "district": "Dharwad", "lat": 15.4571, "lng": 75.0079, "tier": 2},
+    {"id": "mangaluru-bs", "name": "Mangaluru City Bus Stand", "city": "Mangaluru", "depot": "Mangaluru", "district": "Dakshina Kannada", "lat": 12.8694, "lng": 74.8430, "tier": 3},
+    {"id": "belagavi", "name": "Belagavi Bus Stand", "city": "Belagavi", "depot": "Belagavi", "district": "Belagavi", "lat": 15.8497, "lng": 74.4977, "tier": 3},
+    {"id": "kalaburagi", "name": "Kalaburagi Bus Stand", "city": "Kalaburagi", "depot": "Kalaburagi", "district": "Kalaburagi", "lat": 17.3297, "lng": 76.8167, "tier": 3},
+    {"id": "davangere", "name": "Davangere Bus Stand", "city": "Davangere", "depot": "Davangere", "district": "Davangere", "lat": 14.4644, "lng": 75.9218, "tier": 2},
+    {"id": "shivamogga", "name": "Shivamogga Bus Stand", "city": "Shivamogga", "depot": "Shivamogga", "district": "Shivamogga", "lat": 13.9299, "lng": 75.5681, "tier": 2},
+    {"id": "tumakuru", "name": "Tumakuru Bus Stand", "city": "Tumakuru", "depot": "Tumakuru", "district": "Tumakuru", "lat": 13.3379, "lng": 77.1173, "tier": 2},
+    {"id": "hassan", "name": "Hassan Bus Stand", "city": "Hassan", "depot": "Hassan", "district": "Hassan", "lat": 13.0033, "lng": 76.0997, "tier": 2},
+    {"id": "chikkamagaluru", "name": "Chikkamagaluru Bus Stand", "city": "Chikkamagaluru", "depot": "Chikkamagaluru", "district": "Chikkamagaluru", "lat": 13.3161, "lng": 75.7720, "tier": 2},
+    {"id": "ballari", "name": "Ballari Bus Stand", "city": "Ballari", "depot": "Ballari", "district": "Ballari", "lat": 15.1394, "lng": 76.9214, "tier": 2},
+    {"id": "udupi", "name": "Udupi Bus Stand", "city": "Udupi", "depot": "Udupi", "district": "Udupi", "lat": 13.3409, "lng": 74.7421, "tier": 2},
+    {"id": "raichur", "name": "Raichur Bus Stand", "city": "Raichur", "depot": "Raichur", "district": "Raichur", "lat": 16.2120, "lng": 77.3566, "tier": 2},
+    {"id": "bidar", "name": "Bidar Bus Stand", "city": "Bidar", "depot": "Bidar", "district": "Bidar", "lat": 17.9104, "lng": 77.5199, "tier": 2},
+    {"id": "chitradurga", "name": "Chitradurga Bus Stand", "city": "Chitradurga", "depot": "Chitradurga", "district": "Chitradurga", "lat": 14.2226, "lng": 76.3990, "tier": 2},
+    {"id": "chamarajanagar", "name": "Chamarajanagar Bus Stand", "city": "Chamarajanagar", "depot": "Chamarajanagar", "district": "Chamarajanagar", "lat": 11.9211, "lng": 76.9400, "tier": 2},
+    {"id": "mandya", "name": "Mandya Bus Stand", "city": "Mandya", "depot": "Mandya", "district": "Mandya", "lat": 12.5218, "lng": 76.8951, "tier": 2},
+    {"id": "kodagu-madikeri", "name": "Madikeri Bus Stand", "city": "Madikeri", "depot": "Kodagu", "district": "Kodagu", "lat": 12.4244, "lng": 75.7382, "tier": 2}
+  ],
+  "routes": [
+    {
+      "id": "ksrtc-blr-mys-001",
+      "name": "Bengaluru – Mysuru Vajra Express",
+      "operator": "KSRTC",
+      "corridor": true,
+      "origin_stop_id": "kia-bengaluru",
+      "destination_stop_id": "mysuru-central",
+      "origin_city": "Bengaluru",
+      "destination_city": "Mysuru",
+      "distance_km": 139,
+      "bus_types": ["Vajra AC", "Airavat Club Class"],
+      "stops": [
+        {"stop_id": "kia-bengaluru", "name": "Kempegowda Bus Terminal (Majestic)", "city": "Bengaluru", "lat": 12.9777, "lng": 77.5713, "seq": 1, "cum_km": 0},
+        {"stop_id": "mandya", "name": "Mandya Bus Stand", "city": "Mandya", "lat": 12.5218, "lng": 76.8951, "seq": 2, "cum_km": 95},
+        {"stop_id": "mysuru-central", "name": "Mysuru Central Bus Stand", "city": "Mysuru", "lat": 12.2958, "lng": 76.6394, "seq": 3, "cum_km": 139}
+      ]
+    },
+    {
+      "id": "ksrtc-blr-mng-001",
+      "name": "Bengaluru – Mangaluru Airavat",
+      "operator": "KSRTC",
+      "corridor": true,
+      "origin_stop_id": "kia-bengaluru",
+      "destination_stop_id": "mangaluru-bs",
+      "origin_city": "Bengaluru",
+      "destination_city": "Mangaluru",
+      "distance_km": 352,
+      "bus_types": ["Airavat", "Airavat Club Class"],
+      "stops": [
+        {"stop_id": "kia-bengaluru", "name": "Kempegowda Bus Terminal (Majestic)", "city": "Bengaluru", "lat": 12.9777, "lng": 77.5713, "seq": 1, "cum_km": 0},
+        {"stop_id": "hassan", "name": "Hassan Bus Stand", "city": "Hassan", "lat": 13.0033, "lng": 76.0997, "seq": 2, "cum_km": 187},
+        {"stop_id": "chikkamagaluru", "name": "Chikkamagaluru Bus Stand", "city": "Chikkamagaluru", "lat": 13.3161, "lng": 75.7720, "seq": 3, "cum_km": 242},
+        {"stop_id": "mangaluru-bs", "name": "Mangaluru City Bus Stand", "city": "Mangaluru", "lat": 12.8694, "lng": 74.8430, "seq": 4, "cum_km": 352}
+      ]
+    },
+    {
+      "id": "ksrtc-blr-hubli-001",
+      "name": "Bengaluru – Hubballi Airavat",
+      "operator": "KSRTC",
+      "corridor": true,
+      "origin_stop_id": "kia-bengaluru",
+      "destination_stop_id": "hubli-central",
+      "origin_city": "Bengaluru",
+      "destination_city": "Hubballi",
+      "distance_km": 407,
+      "bus_types": ["Airavat", "Rajahamsa"],
+      "stops": [
+        {"stop_id": "kia-bengaluru", "name": "Kempegowda Bus Terminal (Majestic)", "city": "Bengaluru", "lat": 12.9777, "lng": 77.5713, "seq": 1, "cum_km": 0},
+        {"stop_id": "davangere", "name": "Davangere Bus Stand", "city": "Davangere", "lat": 14.4644, "lng": 75.9218, "seq": 2, "cum_km": 268},
+        {"stop_id": "hubli-central", "name": "Hubli Bus Stand", "city": "Hubballi", "lat": 15.3647, "lng": 75.1240, "seq": 3, "cum_km": 407}
+      ]
+    },
+    {
+      "id": "ksrtc-blr-belagavi-001",
+      "name": "Bengaluru – Belagavi Airavat",
+      "operator": "KSRTC",
+      "corridor": true,
+      "origin_stop_id": "kia-bengaluru",
+      "destination_stop_id": "belagavi",
+      "origin_city": "Bengaluru",
+      "destination_city": "Belagavi",
+      "distance_km": 503,
+      "bus_types": ["Airavat", "Karnataka Sarige"],
+      "stops": [
+        {"stop_id": "kia-bengaluru", "name": "Kempegowda Bus Terminal (Majestic)", "city": "Bengaluru", "lat": 12.9777, "lng": 77.5713, "seq": 1, "cum_km": 0},
+        {"stop_id": "davangere", "name": "Davangere Bus Stand", "city": "Davangere", "lat": 14.4644, "lng": 75.9218, "seq": 2, "cum_km": 268},
+        {"stop_id": "hubli-central", "name": "Hubli Bus Stand", "city": "Hubballi", "lat": 15.3647, "lng": 75.1240, "seq": 3, "cum_km": 407},
+        {"stop_id": "dharwad", "name": "Dharwad Bus Stand", "city": "Dharwad", "lat": 15.4571, "lng": 75.0079, "seq": 4, "cum_km": 424},
+        {"stop_id": "belagavi", "name": "Belagavi Bus Stand", "city": "Belagavi", "lat": 15.8497, "lng": 74.4977, "seq": 5, "cum_km": 503}
+      ]
+    },
+    {
+      "id": "ksrtc-mys-mng-001",
+      "name": "Mysuru – Mangaluru Express",
+      "operator": "KSRTC",
+      "corridor": true,
+      "origin_stop_id": "mysuru-central",
+      "destination_stop_id": "mangaluru-bs",
+      "origin_city": "Mysuru",
+      "destination_city": "Mangaluru",
+      "distance_km": 248,
+      "bus_types": ["Rajahamsa", "Karnataka Sarige"],
+      "stops": [
+        {"stop_id": "mysuru-central", "name": "Mysuru Central Bus Stand", "city": "Mysuru", "lat": 12.2958, "lng": 76.6394, "seq": 1, "cum_km": 0},
+        {"stop_id": "kodagu-madikeri", "name": "Madikeri Bus Stand", "city": "Madikeri", "lat": 12.4244, "lng": 75.7382, "seq": 2, "cum_km": 120},
+        {"stop_id": "mangaluru-bs", "name": "Mangaluru City Bus Stand", "city": "Mangaluru", "lat": 12.8694, "lng": 74.8430, "seq": 3, "cum_km": 248}
+      ]
+    },
+    {
+      "id": "ksrtc-blr-shivamogga-001",
+      "name": "Bengaluru – Shivamogga Express",
+      "operator": "KSRTC",
+      "corridor": true,
+      "origin_stop_id": "kia-bengaluru",
+      "destination_stop_id": "shivamogga",
+      "origin_city": "Bengaluru",
+      "destination_city": "Shivamogga",
+      "distance_km": 278,
+      "bus_types": ["Rajahamsa", "Karnataka Sarige"],
+      "stops": [
+        {"stop_id": "kia-bengaluru", "name": "Kempegowda Bus Terminal (Majestic)", "city": "Bengaluru", "lat": 12.9777, "lng": 77.5713, "seq": 1, "cum_km": 0},
+        {"stop_id": "tumakuru", "name": "Tumakuru Bus Stand", "city": "Tumakuru", "lat": 13.3379, "lng": 77.1173, "seq": 2, "cum_km": 72},
+        {"stop_id": "shivamogga", "name": "Shivamogga Bus Stand", "city": "Shivamogga", "lat": 13.9299, "lng": 75.5681, "seq": 3, "cum_km": 278}
+      ]
+    },
+    {
+      "id": "ksrtc-blr-kalaburagi-001",
+      "name": "Bengaluru – Kalaburagi Express",
+      "operator": "KSRTC",
+      "corridor": true,
+      "origin_stop_id": "kia-bengaluru",
+      "destination_stop_id": "kalaburagi",
+      "origin_city": "Bengaluru",
+      "destination_city": "Kalaburagi",
+      "distance_km": 622,
+      "bus_types": ["Airavat", "Karnataka Sarige"],
+      "stops": [
+        {"stop_id": "kia-bengaluru", "name": "Kempegowda Bus Terminal (Majestic)", "city": "Bengaluru", "lat": 12.9777, "lng": 77.5713, "seq": 1, "cum_km": 0},
+        {"stop_id": "chitradurga", "name": "Chitradurga Bus Stand", "city": "Chitradurga", "lat": 14.2226, "lng": 76.3990, "seq": 2, "cum_km": 202},
+        {"stop_id": "ballari", "name": "Ballari Bus Stand", "city": "Ballari", "lat": 15.1394, "lng": 76.9214, "seq": 3, "cum_km": 315},
+        {"stop_id": "raichur", "name": "Raichur Bus Stand", "city": "Raichur", "lat": 16.2120, "lng": 77.3566, "seq": 4, "cum_km": 427},
+        {"stop_id": "kalaburagi", "name": "Kalaburagi Bus Stand", "city": "Kalaburagi", "lat": 17.3297, "lng": 76.8167, "seq": 5, "cum_km": 622}
+      ]
+    },
+    {
+      "id": "ksrtc-blr-udupi-001",
+      "name": "Bengaluru – Udupi Airavat",
+      "operator": "KSRTC",
+      "corridor": true,
+      "origin_stop_id": "kia-bengaluru",
+      "destination_stop_id": "udupi",
+      "origin_city": "Bengaluru",
+      "destination_city": "Udupi",
+      "distance_km": 395,
+      "bus_types": ["Airavat", "Airavat Club Class"],
+      "stops": [
+        {"stop_id": "kia-bengaluru", "name": "Kempegowda Bus Terminal (Majestic)", "city": "Bengaluru", "lat": 12.9777, "lng": 77.5713, "seq": 1, "cum_km": 0},
+        {"stop_id": "hassan", "name": "Hassan Bus Stand", "city": "Hassan", "lat": 13.0033, "lng": 76.0997, "seq": 2, "cum_km": 187},
+        {"stop_id": "udupi", "name": "Udupi Bus Stand", "city": "Udupi", "lat": 13.3409, "lng": 74.7421, "seq": 3, "cum_km": 395}
+      ]
+    }
+  ]
+}

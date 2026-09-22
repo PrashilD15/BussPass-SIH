@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/Dart-3.11-0175C2?style=flat-square&logo=dart&logoColor=white" />
   <img src="https://img.shields.io/badge/Firebase-Connected-FFCA28?style=flat-square&logo=firebase&logoColor=black" />
   <img src="https://img.shields.io/badge/Google%20Maps-Integrated-4285F4?style=flat-square&logo=googlemaps&logoColor=white" />
-  <img src="https://img.shields.io/badge/SIH-2024--25-DC143C?style=flat-square" />
+  <img src="https://img.shields.io/badge/SIH-2026-DC143C?style=flat-square" />
   <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=flat-square&logo=android&logoColor=white" />
 </p>
 

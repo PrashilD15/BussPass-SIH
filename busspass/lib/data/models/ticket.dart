@@ -17,6 +17,7 @@ import 'dart:math' as math;
 
 import 'package:busspass/core/math/fare_engine.dart';
 import 'package:busspass/core/math/schedule.dart';
+import 'package:busspass/core/math/journey_planner.dart';
 
 /// Lifecycle of a ticket.
 enum TicketStatus {
@@ -169,6 +170,51 @@ class Ticket {
   });
 
   bool get isValidated => validatedAt != null;
+
+  /// Issue a ticket from a planned itinerary.
+  ///
+  /// This is the single place a plan becomes a held entitlement: fare is
+  /// re-computed per rider category (so a concession actually saves money on
+  /// the receipt), and the reference matches what a conductor can read aloud.
+  factory Ticket.fromItinerary(
+    Itinerary itinerary, {
+    required RiderCategory riderCategory,
+    required int passengers,
+    PaymentMethod paymentMethod = PaymentMethod.cashOnBoard,
+  }) {
+    final now = DateTime.now();
+    final first = itinerary.legs.first;
+    final last = itinerary.legs.last;
+    final fare = FareEngine.compute(
+      distanceKm: itinerary.distanceKm,
+      serviceClass: last.serviceClass,
+      category: riderCategory,
+    );
+    final multiplier = math.max(1, passengers);
+    final paid = fare.total * multiplier;
+    final base = fare.baseFare * multiplier;
+    return Ticket(
+      id: 'tkt-${now.millisecondsSinceEpoch}',
+      reference: generateReference(now, itinerary.signature.hashCode),
+      kind: TicketKind.single,
+      status: TicketStatus.upcoming,
+      originStopId: first.boardStop.id,
+      originName: first.boardStop.city,
+      destinationStopId: last.alightStop.id,
+      destinationName: last.alightStop.city,
+      routeId: first.route.id,
+      serviceClassKey: last.serviceClass.key,
+      departsAt: itinerary.departsAt,
+      arrivesAt: itinerary.arrivesAt,
+      distanceKm: itinerary.distanceKm,
+      riderCategory: riderCategory,
+      amountPaid: paid,
+      baseFare: base,
+      passengers: multiplier,
+      paymentMethod: paymentMethod,
+      issuedAt: now,
+    );
+  }
 
   bool get isPass => kind == TicketKind.pass;
 

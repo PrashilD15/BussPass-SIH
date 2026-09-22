@@ -23,9 +23,13 @@ import 'package:geolocator/geolocator.dart';
 import 'package:busspass/core/math/fare_engine.dart';
 import 'package:busspass/core/math/geo.dart';
 import 'package:busspass/core/math/journey_planner.dart';
+import 'package:busspass/data/providers/state_provider.dart';
+import 'package:busspass/data/providers/auth_provider.dart';
 import 'package:busspass/core/math/schedule.dart';
 import 'package:busspass/core/services/bus_simulator.dart';
 import 'package:busspass/core/services/notification_service.dart';
+import 'package:busspass/core/services/transit_detection_service.dart';
+import 'package:busspass/core/services/travel_pattern_alerts.dart';
 import 'package:busspass/data/models/live_bus.dart';
 import 'package:busspass/data/models/network_models.dart';
 import 'package:busspass/data/models/ticket.dart';
@@ -78,14 +82,26 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 final networkRepositoryProvider = Provider<NetworkRepository>((ref) {
-  return NetworkRepository(firestore: ref.watch(firestoreProvider));
+  final store = ref.watch(localStoreProvider);
+  return NetworkRepository(
+    firestore: ref.watch(firestoreProvider),
+    // Persistent stale-while-revalidate cache: a fresh overlay skips the
+    // Firestore fetch (fewer reads, faster launch); a stale one still serves
+    // last-known live data if the network is down.
+    readOverlayCache: store.readOverlayCache,
+    readOverlayCachedAt: store.readOverlayCachedAt,
+    writeOverlayCache: store.writeOverlayCache,
+  );
 });
 
 /// The loaded network, with its provenance.
 ///
-/// Bundled data always resolves; the Firestore overlay is best-effort.
+/// Bundled data always resolves; the Firestore overlay is best-effort. Keys off
+/// [effectiveSTCProvider] so a manual state switch (not just GPS detection)
+/// reloads the whole chain.
 final networkSnapshotProvider = FutureProvider<NetworkSnapshot>((ref) async {
-  final snapshot = await ref.watch(networkRepositoryProvider).load();
+  final stc = ref.watch(effectiveSTCProvider);
+  final snapshot = await ref.watch(networkRepositoryProvider).load(assetPath: stc.networkAsset);
   // The offset caches key on service ids, which are only unique within one
   // dataset version.
   JourneyPlanner.invalidateCaches();
@@ -265,12 +281,18 @@ class JourneyQuery {
   final DateTime departAfter;
 
   final JourneyPreference preference;
+  final int adultCount;
+  final int ladyCount;
+  final int childCount;
 
   JourneyQuery({
     required this.originId,
     required this.destinationId,
     required DateTime departAfter,
     this.preference = JourneyPreference.fastest,
+    this.adultCount = 1,
+    this.ladyCount = 0,
+    this.childCount = 0,
   }) : departAfter = DateTime(
           departAfter.year,
           departAfter.month,
@@ -285,11 +307,21 @@ class JourneyQuery {
       other.originId == originId &&
       other.destinationId == destinationId &&
       other.departAfter == departAfter &&
-      other.preference == preference;
+      other.preference == preference &&
+      other.adultCount == adultCount &&
+      other.ladyCount == ladyCount &&
+      other.childCount == childCount;
 
   @override
-  int get hashCode =>
-      Object.hash(originId, destinationId, departAfter, preference);
+  int get hashCode => Object.hash(
+        originId,
+        destinationId,
+        departAfter,
+        preference,
+        adultCount,
+        ladyCount,
+        childCount,
+      );
 
   @override
   String toString() =>
@@ -302,12 +334,7 @@ class JourneyQuery {
 final journeyPlanProvider =
     FutureProvider.family<List<Itinerary>, JourneyQuery>((ref, query) async {
   final planner = await ref.watch(journeyPlannerProvider.future);
-  return planner.plan(
-    originId: query.originId,
-    destinationId: query.destinationId,
-    departAfter: query.departAfter,
-    preference: query.preference,
-  );
+  return planner.plan(query: query);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -341,7 +368,6 @@ enum LiveSource {
 /// source is reported so the UI can label simulated data honestly.
 final liveFleetProvider = StreamProvider<LiveFleet>((ref) async* {
   final database = ref.watch(realtimeDatabaseProvider);
-  final simulator = await ref.watch(busSimulatorProvider.future);
 
   if (database != null) {
     // Race the RTDB against a short timeout. A configured-but-empty database
@@ -374,13 +400,12 @@ final liveFleetProvider = StreamProvider<LiveFleet>((ref) async* {
         return;
       }
     } catch (error) {
-      debugPrint('RTDB probe failed, using the simulator — $error');
+      debugPrint('RTDB probe failed — $error');
     }
   }
 
-  yield* simulator.watchFleet().map(
-        (buses) => LiveFleet(buses: buses, source: LiveSource.simulator),
-      );
+  // Yield an empty fleet if RTDB is unavailable or empty.
+  yield LiveFleet(buses: const [], source: LiveSource.none);
 });
 
 /// A fleet snapshot with provenance.
@@ -429,6 +454,73 @@ final trackedBusProvider =
   final fleet = ref.watch(liveFleetProvider).value ?? LiveFleet.empty;
   return fleet.byId(busId);
 });
+
+/// Whether the rider appears to be aboard a bus right now.
+///
+/// Combines the position stream, the live fleet, and the route corridors into
+/// [TransitDetectionService]'s inference. The home screen uses this to offer
+/// "start tracking" the moment a match is strong, so tracking never depends on
+/// the rider remembering to find the bus on the map.
+///
+/// Built so the detector is created **once** and fed continuously — `ref.listen`
+/// rather than `ref.watch` inside the stream, because rebuilding the service on
+/// every 3-second fleet tick would reset its speed trail and it would never
+/// reach the sustained-speed threshold that confirms boarding.
+final transitDetectionProvider =
+    StreamProvider<TransitDetection>((ref) {
+  final controller = StreamController<TransitDetection>.broadcast();
+  TransitDetectionService? service;
+  List<LiveBus> pendingFleet = const [];
+
+  Future<void> ensureService() async {
+    if (service != null) return;
+    final network = await ref.read(networkProvider.future);
+    final s = TransitDetectionService(network: network);
+    s.updateFleet(pendingFleet);
+    s.detections.listen((d) {
+      if (!controller.isClosed) controller.add(d);
+    });
+    service = s;
+  }
+
+  ref.listen<AsyncValue<LiveFleet>>(liveFleetProvider, (_, next) {
+    final fleet = next.value;
+    if (fleet == null) return;
+    pendingFleet = fleet.buses;
+    service?.updateFleet(fleet.buses);
+  });
+
+  ref.listen<AsyncValue<Position>>(riderPositionStreamProvider, (_, next) {
+    final p = next.value;
+    if (p == null) return;
+    unawaited(ensureService().then((_) => service?.addPosition(
+          point: GeoPoint(p.latitude, p.longitude),
+          speedKmph: p.speed,
+          heading: p.heading,
+        )));
+  });
+
+  unawaited(ensureService());
+
+  ref.onDispose(() {
+    unawaited(controller.close());
+    unawaited(service?.dispose() ?? Future.value());
+  });
+
+  return controller.stream;
+});
+
+/// When the rider last dismissed the boarding prompt, so we don't nag.
+class BoardingDismissedNotifier extends Notifier<DateTime?> {
+  @override
+  DateTime? build() => null;
+
+  void dismiss() => state = DateTime.now();
+}
+
+final boardingPromptDismissedAtProvider =
+    NotifierProvider<BoardingDismissedNotifier, DateTime?>(
+        BoardingDismissedNotifier.new);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Rider location
@@ -587,6 +679,12 @@ class SettingsNotifier extends Notifier<AppSettings> {
         emergencyContactName: name,
         emergencyContactPhone: phone,
       ));
+
+  Future<void> setDataCollectionConsent(bool consented) =>
+      _persist(state.copyWith(dataCollectionConsent: consented));
+
+  Future<void> setHasSeenPrivacyConsent(bool seen) =>
+      _persist(state.copyWith(hasSeenPrivacyConsent: seen));
 }
 
 final settingsProvider =
@@ -598,6 +696,36 @@ final journeyPreferenceProvider = Provider<JourneyPreference>((ref) {
   return JourneyPreference.values.firstWhere(
     (p) => p.name == name,
     orElse: () => JourneyPreference.fastest,
+  );
+});
+
+/// Schedules boarding reminders for frequently-searched travel patterns.
+///
+/// Recomputes whenever the planner, the arrival-alert setting, or the recent
+/// searches change, and is failure-tolerant: a denial or plugin failure only
+/// means no alert, never a crash. It deliberately does not await the network
+/// load itself — it just no-ops until the planner is ready.
+final travelPatternAlertsProvider = Provider<void>((ref) {
+  ref.watch(journeyPlannerProvider);
+  ref.watch(settingsProvider.select((s) => s.arrivalAlerts));
+  ref.watch(recentSearchesProvider);
+
+  final store = ref.read(localStoreProvider);
+  final notifications = ref.read(notificationServiceProvider);
+  final enabled = ref.read(settingsProvider).arrivalAlerts;
+  final lead = ref.read(settingsProvider).arrivalAlertLeadMinutes;
+
+  final planner = ref.read(journeyPlannerProvider).value;
+  if (planner == null) return;
+
+  unawaited(
+    scheduleTravelPatternAlerts(
+      planner: planner,
+      store: store,
+      notifications: notifications,
+      arrivalAlertsEnabled: enabled,
+      leadMinutes: lead,
+    ),
   );
 });
 
@@ -732,19 +860,57 @@ class RecentSearchesNotifier extends Notifier<List<RecentSearch>> {
     required NetworkStop origin,
     required NetworkStop destination,
   }) async {
-    await ref.read(localStoreProvider).recordSearch(RecentSearch(
-          originStopId: origin.id,
-          originName: origin.city,
-          destinationStopId: destination.id,
-          destinationName: destination.city,
-          searchedAt: DateTime.now(),
-        ));
+    final search = RecentSearch(
+      originStopId: origin.id,
+      originName: origin.city,
+      destinationStopId: destination.id,
+      destinationName: destination.city,
+      searchedAt: DateTime.now(),
+    );
+    await ref.read(localStoreProvider).recordSearch(search);
     state = ref.read(localStoreProvider).readRecentSearches();
+
+    final settings = ref.read(settingsProvider);
+    if (settings.dataCollectionConsent) {
+      final user = ref.read(authRepositoryProvider).currentUser;
+      final firestore = ref.read(firestoreProvider);
+      if (user != null && firestore != null) {
+        try {
+          await firestore
+              .collection('users')
+              .doc(user.uid)
+              .collection('recent_searches')
+              .add(search.toJson());
+        } catch (e) {
+          debugPrint('Failed to sync search to Firestore: $e');
+        }
+      }
+    }
   }
 
   Future<void> clear() async {
     await ref.read(localStoreProvider).clearRecentSearches();
     state = const [];
+
+    final settings = ref.read(settingsProvider);
+    if (settings.dataCollectionConsent) {
+      final user = ref.read(authRepositoryProvider).currentUser;
+      final firestore = ref.read(firestoreProvider);
+      if (user != null && firestore != null) {
+        try {
+          final snapshot = await firestore
+              .collection('users')
+              .doc(user.uid)
+              .collection('recent_searches')
+              .get();
+          for (final doc in snapshot.docs) {
+            await doc.reference.delete();
+          }
+        } catch (e) {
+          debugPrint('Failed to clear searches from Firestore: $e');
+        }
+      }
+    }
   }
 }
 

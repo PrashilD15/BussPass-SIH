@@ -52,49 +52,82 @@ class _LanguageScreenState extends State<LanguageScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: palette.canvas,
       body: SafeArea(
         child: Column(
           children: [
-            // ── Top Section: Brand + Tagline ──────────────────────────────
+            // ── Premium Brand Header ──────────────────────────────────
             Expanded(
-              flex: 3,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const BrandMark(size: 72)
-                        .animate()
-                        .scale(duration: 500.ms, curve: Curves.easeOutBack),
-                    const SizedBox(height: AppSpacing.xl),
-                    Text(
-                      'BussPass',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.15),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      'Your Travel Partner',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.15),
-                  ],
-                ),
+              flex: 4,
+              child: Stack(
+                children: [
+                  // Subtle decorative blob
+                  Positioned(
+                    top: -20,
+                    right: -50,
+                    child: Container(
+                      width: 180,
+                      height: 180,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: palette.brand.withValues(alpha: 0.07),
+                      ),
+                    ),
+                  ),
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const BrandMark(size: 68)
+                            .animate()
+                            .scale(
+                              duration: 500.ms,
+                              curve: Curves.easeOutBack,
+                            ),
+                        const SizedBox(height: AppSpacing.xl),
+                        Text(
+                          'BussPass',
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            letterSpacing: -0.5,
+                          ),
+                        ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.15),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          'Your Travel Partner',
+                          style: theme.textTheme.bodyMedium,
+                        ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.15),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
 
-            // ── Language Selection Grid ───────────────────────────────────
+            // ── Language Selection ─────────────────────────────────────
             Expanded(
-              flex: 5,
+              flex: 6,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Select Language',
-                      style: Theme.of(context).textTheme.titleLarge,
+                      style: theme.textTheme.titleLarge,
                     ).animate().fadeIn(delay: 400.ms),
-                    const SizedBox(height: AppSpacing.lg),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      'Choose your preferred language for the app.',
+                      style: theme.textTheme.bodyMedium,
+                    ).animate().fadeIn(delay: 450.ms),
+                    const SizedBox(height: AppSpacing.xl),
+
+                    // Premium card grid
                     Expanded(
                       child: GridView.builder(
                         physics: const BouncingScrollPhysics(),
@@ -103,7 +136,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
                           crossAxisCount: 2,
                           crossAxisSpacing: AppSpacing.md,
                           mainAxisSpacing: AppSpacing.md,
-                          childAspectRatio: 1.6,
+                          childAspectRatio: 1.3,
                         ),
                         itemCount: _languages.length,
                         itemBuilder: (context, index) {
@@ -120,16 +153,26 @@ class _LanguageScreenState extends State<LanguageScreen> {
                               curve: Curves.easeOut,
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? AppColors.brand
-                                    : AppColors.surface,
+                                    ? palette.brand
+                                    : palette.surface,
                                 borderRadius: BorderRadius.circular(
-                                    AppSpacing.radiusMd),
+                                    AppSpacing.radiusLg),
                                 border: Border.all(
                                   color: isSelected
-                                      ? AppColors.brand
-                                      : AppColors.hairline,
+                                      ? palette.brand
+                                      : palette.hairline,
                                   width: isSelected ? 1.5 : 1,
                                 ),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color:
+                                              palette.brand.withValues(alpha: 0.25),
+                                          blurRadius: 16,
+                                          offset: const Offset(0, 6),
+                                        ),
+                                      ]
+                                    : null,
                               ),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -137,11 +180,12 @@ class _LanguageScreenState extends State<LanguageScreen> {
                                   Text(
                                     lang['native']!,
                                     style: TextStyle(
-                                      fontSize: 18,
+                                      fontSize: 20,
                                       fontWeight: FontWeight.w700,
                                       color: isSelected
                                           ? Colors.white
-                                          : AppColors.ink,
+                                          : palette.ink,
+                                      letterSpacing: -0.3,
                                     ),
                                   ),
                                   const SizedBox(height: AppSpacing.xs),
@@ -151,8 +195,9 @@ class _LanguageScreenState extends State<LanguageScreen> {
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
                                       color: isSelected
-                                          ? Colors.white.withValues(alpha: 0.7)
-                                          : AppColors.inkMuted,
+                                          ? Colors.white
+                                              .withValues(alpha: 0.7)
+                                          : palette.inkMuted,
                                     ),
                                   ),
                                 ],
@@ -172,7 +217,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
               ),
             ),
 
-            // ── Continue Button ───────────────────────────────────────────
+            // ── Continue Button ────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
                   AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl),

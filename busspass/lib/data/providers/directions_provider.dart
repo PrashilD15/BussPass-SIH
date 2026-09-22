@@ -7,34 +7,57 @@ final directionsServiceProvider =
 
 /// Resolve a **road-snapped** polyline for a leg's travelled portion. Falls
 /// back to the straight stop-to-stop points when the API is unavailable.
-final legRoadPolylineProvider =
-    FutureProvider.family<List<LatLng>, TransLegRef>((ref, leg) async {
+final legDirectionsProvider =
+    FutureProvider.family<DirectionsResult?, TransLegRef>((ref, leg) async {
   final service = ref.watch(directionsServiceProvider);
 
   final points = leg.points;
-  if (points.length < 2) return <LatLng>[];
+  if (points.length < 2) return null;
 
-  final waypoints = points.length > 2
+  var waypoints = points.length > 2
       ? points.sublist(1, points.length - 1).toList()
       : <LatLng>[];
 
-  final result = await service.route(
+  // Google Maps Directions API allows a max of 25 waypoints. Subsample if needed.
+  if (waypoints.length > 23) {
+    final step = waypoints.length / 23;
+    waypoints = List.generate(
+      23,
+      (i) => waypoints[(i * step).floor()],
+    );
+  }
+
+  return await service.route(
     origin: points.first,
     waypoints: waypoints,
     destination: points.last,
   );
+});
+
+/// Resolve a **road-snapped** polyline for a leg's travelled portion. Falls
+/// back to the straight stop-to-stop points when the API is unavailable.
+final legRoadPolylineProvider =
+    FutureProvider.family<List<LatLng>, TransLegRef>((ref, leg) async {
+  final result = await ref.watch(legDirectionsProvider(leg).future);
 
   if (result != null && result.points.isNotEmpty) {
     return result.points.map((p) => p.latLng).toList();
   }
 
-  return points;
+  return leg.points;
 });
 
 /// Convenience wrapper exposing the resolved road polyline for the UI.
 final legRoadPolylineViewProvider =
     Provider.family<List<LatLng>?, TransLegRef>((ref, leg) {
   final async = ref.watch(legRoadPolylineProvider(leg));
+  return async.hasValue ? async.value : null;
+});
+
+/// Convenience wrapper exposing the resolved directions result for the UI.
+final legDirectionsViewProvider =
+    Provider.family<DirectionsResult?, TransLegRef>((ref, leg) {
+  final async = ref.watch(legDirectionsProvider(leg));
   return async.hasValue ? async.value : null;
 });
 
@@ -62,7 +85,7 @@ class TransLegRef {
       other.destination == destination;
 
   @override
-  int get hashCode => Object.hash(origin, via, destination);
+  int get hashCode => Object.hash(origin, Object.hashAll(via), destination);
 
   static bool _listsEqual(List<LatLng> a, List<LatLng> b) {
     if (a.length != b.length) return false;

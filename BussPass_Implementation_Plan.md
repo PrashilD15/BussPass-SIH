@@ -380,7 +380,7 @@ Algorithm:
 
 2. Run time-dependent Dijkstra:
    - At each node, check which buses are AVAILABLE at that time
-   - Query RTDB for real-time bus positions for actual ETAs
+   - Query RTDB for real-time bus positions for actual ETA
    - Factor in buffer time for connections (minimum 10 min)
 
 3. Return top 3 routes ranked by:

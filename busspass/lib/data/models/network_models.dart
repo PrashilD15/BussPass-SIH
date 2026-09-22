@@ -21,6 +21,7 @@ class NetworkStop {
   final String district;
   final double lat;
   final double lng;
+  final String? imageUrl;
 
   /// 1 = village stop, 2 = taluka stand, 3 = division/district stand. Used to
   /// size map markers and to break ties in search ranking.
@@ -34,6 +35,7 @@ class NetworkStop {
     required this.district,
     required this.lat,
     required this.lng,
+    this.imageUrl,
     this.tier = 1,
   });
 
@@ -60,9 +62,10 @@ class NetworkStop {
         city: json['city'] as String? ?? '',
         depot: json['depot'] as String? ?? '',
         district: json['district'] as String? ?? '',
-        lat: (json['lat'] as num?)?.toDouble() ?? 0,
-        lng: (json['lng'] as num?)?.toDouble() ?? 0,
-        tier: (json['tier'] as num?)?.toInt() ?? 1,
+        lat: (json['lat'] as num).toDouble(),
+        lng: (json['lng'] as num).toDouble(),
+        imageUrl: json['imageUrl'] as String?,
+        tier: json['tier'] as int? ?? 1,
       );
 
   Map<String, dynamic> toJson() => {
@@ -73,6 +76,7 @@ class NetworkStop {
         'district': district,
         'lat': lat,
         'lng': lng,
+        'imageUrl': imageUrl,
         'tier': tier,
       };
 
@@ -294,7 +298,7 @@ class TransitRoute {
 
   /// Adult fare across the whole corridor for [serviceClassKey].
   int fullFare(String serviceClassKey) =>
-      FareEngine.baseFare(distanceKm, serviceClassKey);
+      FareEngine.baseFare(distanceKm, serviceClassKey, operatorName: operatorName);
 
   /// Cheapest and dearest full-corridor adult fare across operating classes.
   ({int min, int max}) get fareRange {
@@ -486,6 +490,7 @@ class TimetableRow {
   ServiceClass get serviceClass => ServiceClassCatalog.byKey(busType);
 
   /// Adult fare for this board row, when the board printed a distance.
+  /// (TimetableRow does not currently store operator, so it defaults to MSRTC in FareEngine).
   int? get fare => distanceKm == null
       ? null
       : FareEngine.baseFare(distanceKm!, busType);
