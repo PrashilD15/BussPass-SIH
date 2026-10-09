@@ -548,7 +548,7 @@ class _SavedPlaceRow extends ConsumerWidget {
       title: switch (kind) {
         SavedPlaceKind.home => 'profile.home_place'.tr(),
         SavedPlaceKind.work => 'profile.work_place'.tr(),
-        SavedPlaceKind.other => 'profile.favourite'.tr(),
+        SavedPlaceKind.other => 'profile.other'.tr(),
       },
       subtitle: bound == null
           ? 'profile.not_set'.tr()
