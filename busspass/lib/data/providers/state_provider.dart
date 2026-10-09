@@ -80,11 +80,11 @@ DetectedSTC stcMetaFor(String stcCode) {
         networkAsset: 'assets/data/gsrtc_network.json',
         badgeColor: 0xFF0B5394,
       );
-    case 'TSRTC':
+    case 'TGSRTC':
       return const DetectedSTC(
-        stcCode: 'TSRTC',
+        stcCode: 'TGSRTC',
         stateName: 'Telangana',
-        networkAsset: 'assets/data/tsrtc_network.json',
+        networkAsset: 'assets/data/tgsrtc_network.json',
         badgeColor: 0xFF6D4C9B,
       );
     case 'APSRTC':

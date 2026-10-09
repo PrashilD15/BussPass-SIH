@@ -290,6 +290,19 @@ class AppPalette extends ThemeExtension<AppPalette> {
       );
     }
 
+    // TGSRTC (Telangana): Calm Purple
+    if (stcCode == 'TGSRTC') {
+      return base.copyWith(
+        brand: brightness == Brightness.light ? const Color(0xFF6D4C9B) : const Color(0xFF9F83C7),
+        brandDeep: brightness == Brightness.light ? const Color(0xFF4C3073) : const Color(0xFFB59EE3),
+        brandLight: brightness == Brightness.light ? const Color(0xFFF1EBF7) : const Color(0xFF281840),
+        onBrand: const Color(0xFFFFFFFF),
+        gradientBrand: brightness == Brightness.light 
+            ? [const Color(0xFF6D4C9B), const Color(0xFF4C3073)]
+            : [const Color(0xFF9F83C7), const Color(0xFF6D4C9B)],
+      );
+    }
+
     // Fallback: Default Teal / Saffron Dawn
     return base;
   }

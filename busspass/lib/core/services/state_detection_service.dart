@@ -77,13 +77,13 @@ final _boxes = <_StateBB>[
       badgeColor: 0xFF0B5394,
     ),
   ),
-  // Telangana — TSRTC
+  // Telangana — TGSRTC
   _StateBB(
     15.7, 19.9, 77.2, 81.3,
     const DetectedSTC(
-      stcCode: 'TSRTC',
+      stcCode: 'TGSRTC',
       stateName: 'Telangana',
-      networkAsset: 'assets/data/tsrtc_network.json',
+      networkAsset: 'assets/data/tgsrtc_network.json',
       badgeColor: 0xFF6D4C9B,
     ),
   ),

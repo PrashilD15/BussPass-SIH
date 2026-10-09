@@ -32,9 +32,9 @@ const List<DetectedSTC> kAllSTCs = [
     badgeColor: 0xFF0B5394,
   ),
   DetectedSTC(
-    stcCode: 'TSRTC',
+    stcCode: 'TGSRTC',
     stateName: 'Telangana',
-    networkAsset: 'assets/data/tsrtc_network.json',
+    networkAsset: 'assets/data/tgsrtc_network.json',
     badgeColor: 0xFF6D4C9B,
   ),
   DetectedSTC(
