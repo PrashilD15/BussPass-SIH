@@ -4,13 +4,15 @@
 
 <h1>BussPass — Your Travel Partner</h1>
 
-<p><strong>Smart journey planning, real-time tracking, and digital passes for India's state road transport corporations — built to work on Android, iOS, and low-end keypad phones alike.</strong></p>
+<p><strong>Smart journey planning, real-time tracking from the buses' existing AIS-140 tracking system, digital passes, and a Google ADK–powered "AI Human" voice helpline, for India's state road transport corporations. Built to work on Android, iOS, and low-end keypad phones alike.</strong></p>
 
 <p>
   <img src="https://img.shields.io/badge/Flutter-3.24-02569B?style=flat-square&logo=flutter&logoColor=white" />
   <img src="https://img.shields.io/badge/Dart-3.11-0175C2?style=flat-square&logo=dart&logoColor=white" />
   <img src="https://img.shields.io/badge/Firebase-Connected-FFCA28?style=flat-square&logo=firebase&logoColor=black" />
   <img src="https://img.shields.io/badge/Google%20Maps-Integrated-4285F4?style=flat-square&logo=googlemaps&logoColor=white" />
+  <img src="https://img.shields.io/badge/Google%20ADK-Voice%20IVR-4285F4?style=flat-square&logo=google&logoColor=white" />
+  <img src="https://img.shields.io/badge/Tracking-AIS--140%20VLTS-2E7D32?style=flat-square" />
   <img src="https://img.shields.io/badge/SIH-2026--27-DC143C?style=flat-square" />
 </p>
 
@@ -36,6 +38,7 @@
 ## Table of Contents
 
 - [Problem Statement](#problem-statement)
+- [Architecture Update (v2.0)](#architecture-update-v20)
 - [Why Three Platforms?](#why-three-platforms)
 - [What's Actually Built](#whats-actually-built)
 - [Application Flow](#application-flow)
@@ -45,7 +48,9 @@
   - [Fare Engine — Official Stage Model](#fare-engine--official-stage-model)
   - [ETA Engine — Real Traffic Model](#eta-engine--real-traffic-model)
   - [Occupancy Estimation](#occupancy-estimation)
+  - [Live Bus Tracking — Existing AIS-140 VLTS](#live-bus-tracking--existing-ais-140-vlts)
   - [Deterministic Bus Simulator](#deterministic-bus-simulator)
+  - [AI Human Voice IVR — Google ADK](#ai-human-voice-ivr--google-adk)
   - [Transit Detection](#transit-detection)
   - [Walk-to-Stand Navigation](#walk-to-stand-navigation)
   - [Live Navigation Screen](#live-navigation-screen)
@@ -81,6 +86,22 @@ Millions of bus commuters across India—rural and urban—face these challenges
 | Paper tickets only | Easily lost, no history, no digital record |
 | No sleep-stop alerts | Passengers stranded at meal halts; missed stops on night buses |
 | "Live tracking" that isn't | Existing apps fake positions with hardcoded coordinates |
+| Robotic IVR helplines | "Press 1… Invalid option… Goodbye" frustrates elderly callers |
+
+---
+
+## Architecture Update (v2.0)
+
+> **We are not building tracking hardware.** Our first plan was to fit each bus with our own GPS module relayed through the conductor's POS machine. Research showed that state transport buses **already carry AIS-140 compliant Vehicle Location Tracking Devices (VLTDs)**, mandated by MoRTH for public service vehicles, which report to each corporation's VLTS / command-and-control centre. BussPass now **consumes that existing VLTS feed** through a software adapter. The custom GPS + POS hardware design has been dropped entirely.
+>
+> **The IVR is now built on Google ADK.** The planned DTMF menu IVR (Exotel + separate STT/TTS) has been replaced by an **"AI Human" Enquiry Officer** built with the **Google Agent Development Kit (ADK)** and **Gemini Live** streaming audio. It holds natural conversations in Marathi, Hindi and English and calls tools for timetables, fares, routes, live bus ETAs, tickets and emergencies.
+
+| Area | v1.0 (dropped) | v2.0 (current) |
+|---|---|---|
+| Live bus location | Custom NEO-6M GPS + Bluetooth → conductor POS → Firebase | Existing AIS-140 VLTD → STC VLTS → **BussPass VLTS adapter** → Firebase RTDB |
+| Hardware cost | Per-bus module, wiring, installation | **None** |
+| IVR | DTMF menus, Exotel, separate STT/TTS | **Google ADK agent + Gemini Live**, free conversation, tool-calling |
+| Prototype feed | Python GPS simulator | Deterministic `BusSimulator` (same `LiveBus` model as the VLTS provider) |
 
 ---
 
@@ -96,9 +117,9 @@ BussPass is designed around this reality:
 |---|---|
 | **Android** | Full-featured Flutter app — maps, QR, live tracking, notifications |
 | **iOS** | Identical Flutter codebase — `DefaultFirebaseOptions.currentPlatform` switches automatically; Maps SDK enabled for iOS |
-| **Keypad / Feature phone** | USSD / SMS channel planned: journey query via `*789*<from>*<to>#`, fare reply via SMS. The same offline `network.json` graph backs the SMS handler, so the same algorithm serves both channels |
+| **Keypad / Feature phone** | **AI Human voice IVR** (Google ADK + Gemini Live): call a number, speak naturally in Marathi/Hindi/English, hear the next 3 buses, platform, fare and live ETA. A USSD / SMS channel is also planned (`*789*<from>*<to>#`) on the same offline `network.json` graph |
 
-The offline-first architecture is the enabler: because route search and fare calculation are computed locally from a bundled 439 KB dataset with **zero network dependency**, a thin SMS/USSD gateway can reuse the same engine without a full app install.
+The offline-first architecture is the enabler: because route search and fare calculation are computed from a bundled 439 KB dataset with **zero network dependency**, the voice IVR tools and a thin SMS/USSD gateway can reuse the same data and rules without a full app install.
 
 ---
 
@@ -111,8 +132,8 @@ The codebase has **no placeholder data**. Every number the app shows is real:
 | Journey results | `JourneyPlanner` — time-dependent Dijkstra over real stop/service graph |
 | Fares | `FareEngine` — MSRTC stage-based formula, effective 18 July 2026 |
 | ETAs | `EtaEngine` — distance + service class + traffic + dwell + rest-halt model |
-| Bus positions on map | `BusSimulator` — deterministic simulation on real polylines and real timetables |
-| Crowding indicators | `OccupancyEngine` — conductor POS count or time-of-day model |
+| Bus positions on map | Existing **AIS-140 VLTS** feed via the VLTS adapter in production; `BusSimulator` (deterministic, real polylines + real timetables) in the prototype |
+| Crowding indicators | `OccupancyEngine` — STC ticketing (ETIM) count when available, else time-of-day model |
 | Nearby stands | `Geolocator` + Haversine, not hardcoded list |
 | Recent searches | `LocalStore` backed by `SharedPreferences` — real user history |
 | Travel stats | Computed from stored ticket/journey history |
@@ -306,12 +327,37 @@ Rest breaks (meal halts) are modelled explicitly. A Nagpur–Pune 700 km service
 
 Two sources, in priority order:
 
-1. **Reported occupancy** — conductor's POS device knows exactly how many tickets are live. When present, this is ground truth.
+1. **Reported occupancy** — the STC's existing electronic ticketing (ETIM) data knows exactly how many tickets are live. When present, this is ground truth.
 2. **Modelled occupancy** — when no live data is available, load is inferred from: peak commute windows, weekday vs. weekend, distance from origin terminus, and service class.
 
 The distinction is surfaced to the rider. "43 of 45 seats taken (reported)" is actionable. A modelled estimate is shown with different phrasing so riders are never misled.
 
 **Crowd levels:** Seats available → Filling up → Mostly full → Full → Standing only
+
+---
+
+### Live Bus Tracking — Existing AIS-140 VLTS
+
+BussPass installs **no tracking hardware**. Under the MoRTH AIS-140 mandate for public service vehicles, state transport buses are already fitted with Vehicle Location Tracking Devices that report to the corporation's VLTS / command-and-control centre. BussPass plugs into that feed:
+
+```mermaid
+flowchart LR
+    A["AIS-140 VLTD\n(already on every bus)"] --> B["STC VLTS /\nCommand Centre"]
+    B -->|"API / webhook / MQTT\n(data-sharing agreement)"| C["BussPass VLTS Adapter\nCloud Functions / Cloud Run"]
+    C -->|"normalise · de-dupe ·\nmap-match to route/service"| D[("Firebase RTDB\nbuses/{busId}")]
+    D --> E["Flutter app\nlive map · ETA · transit detection"]
+    D --> F["ADK voice IVR\nget_live_bus_eta"]
+    D --> G["Halt / delay alerts"]
+```
+
+| Why reuse VLTS | Benefit |
+|---|---|
+| Already mandated and fitted | Zero procurement, wiring or maintenance cost |
+| Same data the STC control room uses | One source of truth |
+| Fleet-wide coverage | Every equipped bus is trackable as soon as the feed is connected |
+| Includes panic-button events | Can feed the control room / IVR emergency flow |
+
+If the feed is stale or unavailable, the app shows "last updated" and falls back to the timetable-based `EtaEngine` prediction.
 
 ---
 
@@ -327,7 +373,46 @@ Key properties:
 - **Fleet cap** — 220 buses simultaneously simulated; bounded because every tick recomputes each bus's polyline position
 - **Tick rate** — 3 seconds
 
-Swapping to real GPS hardware (conductor POS + Firebase RTDB) is a **provider change only** — `LiveBus` is produced identically either way; nothing downstream knows the source.
+Swapping to the live **AIS-140 VLTS feed** (via the VLTS adapter + Firebase RTDB) is a **provider change only**: `LiveBus` is produced identically either way, and nothing downstream knows the source.
+
+---
+
+### AI Human Voice IVR — Google ADK
+
+`msrtc_human_ai_agent.py` · `ivr_simulator_gui.py` · `adk_live_voice.py` · see also [`AI_HUMAN_IVR_ARCHITECTURE.md`](AI_HUMAN_IVR_ARCHITECTURE.md)
+
+A voice helpline for riders who don't have, or can't use, a smartphone. Instead of "Press 1 for timetable", the caller talks to **an empathetic MSRTC Enquiry Officer** built with the **Google Agent Development Kit (ADK)** on **Gemini Live** (native streaming audio).
+
+```mermaid
+sequenceDiagram
+    participant C as Caller (any phone)
+    participant G as Telephony bridge / Simulator
+    participant A as ADK Runner + Gemini Live
+    participant T as Agent tools
+    participant F as Firestore / RTDB
+    C->>G: Call (Caller ID)
+    G->>T: get_caller_profile / get_caller_ticket
+    T->>F: read
+    G->>A: run_live(LiveRequestQueue)
+    A-->>C: Greeting in Hindi (offers Marathi / English)
+    C->>A: Speaks freely (16 kHz PCM stream)
+    A->>T: get_top3_upcoming_buses(origin, dest)
+    T->>F: routes / timetables / trip master
+    T-->>A: next 3 departures + platform + fare
+    A-->>C: Natural spoken answer (streaming audio)
+    A->>T: update_caller_profile(name, mood, summary)
+```
+
+| Tool | What it does |
+|---|---|
+| `get_top3_upcoming_buses` | 3 nearest departures from the current clock, with platform/bay, bus type, fare |
+| `get_route_details` / `get_fare_details` | Via-stops, duration, MSRTC stage fare per bus type |
+| `get_live_bus_eta` | Live position / ETA from the VLTS-fed RTDB |
+| `get_caller_ticket` | Active ticket looked up by caller ID |
+| `get_caller_profile` / `update_caller_profile` | Caller memory: name, language, mood, frequent routes |
+| `handle_emergency` | Accident / unsafe / medical / breakdown / fire / missing → 112, 108, 1091, MSRTC control room |
+
+Highlights: understands code-switching ("संगमनेर से नाशिक बस वेळ काय आहे?") and spoken numbers, acknowledges intent before answering, and never falls back to invented data. The desktop simulator provides a dial pad, DTMF, live mic streaming, call recordings, and an IoT trigger (`ivr_gateway/current_call` in Firestore). A SIP/media-stream bridge (Exotel / Twilio / Asterisk) connects real PSTN calls in deployment.
 
 ---
 
@@ -515,7 +600,7 @@ flowchart LR
         D1[JourneyPlanner\nDijkstra Algorithm]
         D2[FareEngine\nMSRTC Stage Model]
         D3[EtaEngine\nTraffic + Dwell + Halt Model]
-        D4[OccupancyEngine\nPOS or Time-of-Day]
+        D4[OccupancyEngine\nETIM data or Time-of-Day]
         D5[Geo\nHaversine + Polyline]
         D6[Schedule\nDeparture/Arrival logic]
     end
@@ -544,6 +629,21 @@ flowchart LR
         I3[Firebase Storage\nBus type images]
         I4[Google Maps SDK\nAndroid + iOS]
         I5[OSRM\nOpen-source road routing]
+        I6[Firebase RTDB\nLive bus positions]
+    end
+
+    subgraph Tracking["Live Tracking — existing hardware"]
+        direction TB
+        T1[AIS-140 VLTD on buses]
+        T2[STC VLTS / Command Centre]
+        T3[BussPass VLTS Adapter]
+    end
+
+    subgraph Voice["AI Human Voice IVR"]
+        direction TB
+        V1[Telephony bridge / Simulator]
+        V2[Google ADK Runner\nGemini Live]
+        V3[Agent tools\ntimetable · fare · ETA · ticket · CRM · emergency]
     end
 
     Presentation --> State
@@ -551,6 +651,9 @@ flowchart LR
     State --> Services
     State --> Data
     Data --> Infra
+    T1 --> T2 --> T3 --> I6
+    V1 --> V2 --> V3 --> I2
+    V3 --> I6
 
     style Presentation fill:#FDE8D8,stroke:#E85400,color:#11151C
     style State fill:#f5ede8,stroke:#E85400,color:#11151C
@@ -558,6 +661,8 @@ flowchart LR
     style Services fill:#B34200,stroke:none,color:#fff
     style Data fill:#6B2800,stroke:none,color:#fff
     style Infra fill:#11151C,stroke:none,color:#fff
+    style Tracking fill:#1B5E20,stroke:none,color:#fff
+    style Voice fill:#1A3D7C,stroke:none,color:#fff
 ```
 
 ---
@@ -573,7 +678,7 @@ SIH-BussPass/
 │   │   │   │   ├── journey_planner.dart   Time-dependent Dijkstra — 1,092 lines
 │   │   │   │   ├── fare_engine.dart       MSRTC stage fare model — 21 KB
 │   │   │   │   ├── eta_engine.dart        ETA with traffic + dwell + halt — 403 lines
-│   │   │   │   ├── occupancy_engine.dart  Crowd estimation (POS or modelled)
+│   │   │   │   ├── occupancy_engine.dart  Crowd estimation (ETIM data or modelled)
 │   │   │   │   ├── geo.dart               Haversine, polyline projection, bearing
 │   │   │   │   └── schedule.dart          Departure / arrival scheduling logic
 │   │   │   ├── services/
@@ -636,9 +741,14 @@ SIH-BussPass/
 │   ├── report_routes.js                   Corridor summary report
 │   └── upload_images.js                   Uploads Bus-images/ to Firebase Storage
 │
+├── msrtc_human_ai_agent.py                AI Human IVR engine: ADK tools, persona, CRM, emergency
+├── ivr_simulator_gui.py                   Desktop IVR simulator (Google ADK live session, dial pad, recordings)
+├── adk_live_voice.py                      Headless Google ADK live voice agent (mic ↔ Gemini Live)
 ├── Bus-images/                            Source bus type photographs
 ├── master_timetables.json                 Scraped + verified timetable rows — 988 rows
+├── AI_HUMAN_IVR_ARCHITECTURE.md           Voice IVR architecture
 ├── ARCHITECTURE.md                        Extended architectural notes
+├── BussPass_Implementation_Plan.md        Implementation plan (v2.0, VLTS + ADK)
 └── README.md
 ```
 
@@ -674,6 +784,25 @@ SIH-BussPass/
 | Node.js 18 | Dataset compilation scripts |
 | Firebase Admin SDK | Firestore and Storage seeding |
 | Haversine geometry | Cumulative distance computation at each stop |
+
+### AI Human Voice IVR
+
+| Technology | Purpose |
+|---|---|
+| Google Agent Development Kit (ADK) | `Agent`, `Runner.run_live`, `LiveRequestQueue`, session service, tool-calling |
+| Gemini Live (native audio) | Streaming speech understanding + generation (mr / hi / en) |
+| Firebase Admin SDK (Python) | Firestore reads/writes for timetables, tickets, caller profiles |
+| PyAudio / Tkinter | Desktop simulator: mic capture, playback, dial pad |
+| edge-tts | Fallback neural TTS for text mode |
+| SIP / media-stream bridge (Exotel / Twilio / Asterisk) | PSTN connectivity for real calls (deployment) |
+
+### Live Tracking Integration
+
+| Technology | Purpose |
+|---|---|
+| AIS-140 VLTD + STC VLTS (existing) | Source of live bus positions, already on the fleet |
+| VLTS Adapter (Cloud Functions / Cloud Run) | Ingest, normalise, map-match, write to RTDB |
+| Firebase Realtime Database | Low-latency fan-out of `buses/{busId}` to app and IVR |
 
 ### Feature Phone / USSD Channel (planned)
 
@@ -870,6 +999,19 @@ flutter run -d <your-ios-device-udid>
 # or open ios/Runner.xcworkspace in Xcode and run
 ```
 
+### AI Human Voice IVR Setup (Google ADK)
+
+```bash
+python3 -m venv ivr_venv && source ivr_venv/bin/activate
+pip install google-adk google-genai firebase-admin pyaudio edge-tts SpeechRecognition requests
+export GEMINI_API_KEY="your-key"        # never hardcode keys in source files
+# Firebase service account at scripts/serviceAccountKey.json (git-ignored)
+
+python ivr_simulator_gui.py   # Desktop call simulator (dial pad, live mic, recordings)
+# or
+python adk_live_voice.py      # Headless mic ↔ Gemini Live loop
+```
+
 ### Feature Phone / USSD Setup (planned)
 
 The `network.json` dataset is self-contained. A lightweight Node.js or Python process can import `scripts/build_dataset.js`'s output and respond to USSD `*789*<origin_code>*<dest_code>#` queries with the top journey option and fare — no Flutter, no Firebase, same algorithm.
@@ -898,6 +1040,8 @@ node upload_images.js    # Uploads bus photos to Firebase Storage
 | `busspass/lib/firebase_options.dart` | FlutterFire generated configuration |
 | `scripts/serviceAccountKey.json` | Firebase Admin SDK service account |
 | `busspass/lib/core/constants/api_keys.dart` | Google Maps API key |
+| `GEMINI_API_KEY` (environment variable / `.env`) | Gemini Live API key for the ADK voice IVR |
+| VLTS API credentials (Secret Manager / `.env`) | STC-issued credentials for the VLTS feed (production) |
 
 ---
 

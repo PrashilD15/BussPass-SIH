@@ -29,3 +29,10 @@ scraped_raw.json
 master_timetables.json
 timetables_parsed.json
 scripts/uploaded_urls.json
+.claude/
+
+# Audio and temp files
+*.wav
+*.mp3
+__pycache__/
+

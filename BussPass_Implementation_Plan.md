@@ -192,7 +192,7 @@ body_class: pdf-body
 <div class="subtitle">Smart Transit Companion for Indian State Transport</div>
 
 <div class="tagline">
-"Where Is My Bus" — A real-time, GPS-powered, multi-modal transit companion for Indian state transport passengers, inclusive of elderly & feature-phone users through an AI-powered IVR system.
+"Where Is My Bus" — A real-time transit companion for Indian state transport passengers, powered by the STCs' existing AIS-140 Vehicle Location Tracking System (VLTS), and inclusive of elderly & feature-phone users through a Google ADK–powered "AI Human" voice IVR.
 </div>
 
 **Implementation Plan & Technical Architecture**
@@ -203,13 +203,22 @@ body_class: pdf-body
 
 **Team:** Beyond Binary
 
-**Date:** August 2026
+**Date:** October 2026
 
-**Version:** 1.0
+**Version:** 2.0 (Revised Architecture)
 
 **Classification:** Team Internal — Confidential
 
 </div>
+
+</div>
+
+<div class="success-box">
+
+**📝 Revision Note (v2.0 — October 2026)**
+
+1. **No custom tracking hardware.** v1.0 planned to fit every bus with our own GPS module (NEO-6M + HC-05 Bluetooth) relayed through the conductor's POS. Our research showed that state transport buses **already carry AIS-140 compliant Vehicle Location Tracking Devices (VLTDs)** under the MoRTH mandate for public service vehicles. MSRTC's fleet already reports to the corporation's VLTS / command-and-control backend. BussPass now **integrates with this existing VLTS feed** instead of installing new hardware. The custom GPS + POS relay design has been removed.
+2. **IVR rebuilt on Google ADK.** The DTMF menu IVR (Exotel + Sarvam STT/TTS) is replaced by an **"AI Human" Enquiry Officer** built with the **Google Agent Development Kit (ADK)** and **Gemini Live** streaming audio, with tool-calling into our timetable, fare, ticket and live-tracking data.
 
 </div>
 
@@ -227,11 +236,11 @@ Indian state transport corporations (MSRTC, KSRTC, UPSRTC, APSRTC, etc.) carry *
 
 | Feature | Existing Solutions ("Aapli ST", etc.) | **BussPass (Ours)** |
 |---|---|---|
-| GPS Tracking | ✅ Basic (16K buses) | ✅ **POS-powered GPS** (leverages existing infrastructure) |
+| GPS Tracking | ✅ Basic (16K buses) | ✅ **Consumes the same existing AIS-140 VLTS feed**: no new hardware, plus ETA, transit detection & alerts on top |
 | Multi-bus Journey Planning | ❌ Not available | ✅ **Graph-based route planner with real-time ETA** |
 | Smart Transit Detection | ❌ Not available | ✅ **Auto-detect if user is inside a bus** |
 | Connection Bus Management | ❌ Not available | ✅ **Real-time connecting bus availability** |
-| Feature Phone / Elderly Support | ❌ Not available | ✅ **IVR + DTMF + Native language STT** |
+| Feature Phone / Elderly Support | ❌ Not available | ✅ **Google ADK "AI Human" voice IVR** (Gemini Live, Marathi/Hindi/English, no menus) |
 | Night Halt Alerts | ❌ Not available | ✅ **Push + automated phone call alerts** |
 | Conductor Headcount Dashboard | ❌ Not available | ✅ **Digital passenger manifest** |
 
@@ -241,11 +250,16 @@ Indian state transport corporations (MSRTC, KSRTC, UPSRTC, APSRTC, etc.) carry *
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│                        DATA SOURCES                                  │
+│                 DATA SOURCES (ALL PRE-EXISTING)                      │
 │                                                                      │
-│   🛰️ GPS Module ──Serial/BT──▶ 💳 Conductor POS ──4G/LTE──▶ ☁️    │
-│   (attached to bus)            (always online)                       │
+│  🛰️ AIS-140 VLTD on every bus ──▶ 🏢 STC VLTS / Command Centre ──▶   │
+│     (mandated, already fitted)       (API / data-sharing feed)       │
+│  📋 Official timetables / Trip Master   🎫 STC ticketing (ETIM) data  │
 └──────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+                  🔌 BussPass VLTS Integration Adapter
+             (pull/push ingest → normalise → map to route/service)
                                     │
                                     ▼
 ┌──────────────────────────────────────────────────────────────────────┐
@@ -257,23 +271,22 @@ Indian state transport corporations (MSRTC, KSRTC, UPSRTC, APSRTC, etc.) carry *
 │         │                        │                      │            │
 │         └────────────────────────┼──────────────────────┘            │
 │                                  │                                   │
-│                          🧠 Gemini AI                                │
-│                     (Journey Planner NLU,                            │
-│                      Intent Recognition)                             │
+│              🧠 Google ADK Agent + Gemini Live                       │
+│        (AI Human IVR: streaming voice, tool-calling)                 │
 └──────────────────────────────────────────────────────────────────────┘
                                     │
               ┌─────────────────────┼─────────────────────┐
               ▼                     ▼                     ▼
 ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-│  📱 Flutter App  │  │  📞 IVR System   │  │ 👨‍✈️ Conductor    │
-│  (iOS + Android) │  │  (Exotel +       │  │   Dashboard      │
-│  - Live tracking │  │   Sarvam AI)     │  │  (Flutter Web)   │
-│  - Journey plan  │  │  - DTMF menus    │  │  - Headcount     │
-│  - Transit detect│  │  - Voice STT     │  │  - Halt alerts   │
-│  - Halt alerts   │  │  - Native lang   │  │  - Passenger list│
+│  📱 Flutter App  │  │ 📞 AI Human IVR  │  │ 👨‍✈️ Conductor    │
+│  (iOS + Android) │  │  (Google ADK +   │  │   Dashboard      │
+│  - Live tracking │  │   Gemini Live)   │  │  (Flutter Web)   │
+│  - Journey plan  │  │  - Free speech   │  │  - Headcount     │
+│  - Transit detect│  │  - Tool calling  │  │  - Halt alerts   │
+│  - Halt alerts   │  │  - mr / hi / en  │  │  - Passenger list│
 └──────────────────┘  └──────────────────┘  └──────────────────┘
-    Smartphone             Feature Phone           POS / Tablet
-    Users                  & Elderly Users         Conductors
+    Smartphone             Feature Phone        Phone / Tablet
+    Users                  & Elderly Users       Conductors
 ```
 
 ---
@@ -298,27 +311,32 @@ Indian state transport corporations (MSRTC, KSRTC, UPSRTC, APSRTC, etc.) carry *
 | **Real-time DB** | **Firebase Realtime Database** | Ultra-low latency (~200ms) for live bus positions |
 | **Persistent DB** | **Cloud Firestore** | Routes, stops, schedules, tickets, user journeys |
 | **Serverless** | **Firebase Cloud Functions (TypeScript)** | ETA calculations, alerts, IVR webhooks |
-| **AI/ML** | **Gemini 2.5 Flash** (Firebase AI Logic) | Journey planning NLU, IVR intent recognition |
+| **AI/ML** | **Google ADK + Gemini Live** | AI Human IVR agent: streaming speech in/out, intent understanding, tool-calling |
+| **Tracking Ingest** | **VLTS Integration Adapter** (Cloud Functions / Cloud Run) | Pulls or receives the STC's existing AIS-140 VLTS feed and writes to RTDB |
 | **Auth** | **Firebase Auth** | Phone OTP (works with all Indian numbers) |
 | **Hosting** | **Firebase Hosting** | Admin dashboard, conductor web app |
 
-## 3.3 IVR System
+## 3.3 AI Human IVR System (Google ADK)
 
 | Layer | Technology | Justification |
 |---|---|---|
-| **Telephony** | **Exotel** | PSTN-compatible (feature phones), Indian compliance |
-| **Speech-to-Text** | **Sarvam AI (Saarika)** | 10+ Indian languages, handles code-switching |
-| **Text-to-Speech** | **Sarvam AI (Bulbul)** | Natural Indian language voices |
-| **NLU/Intent** | **Gemini 2.5 Flash** | Parse user intent from transcribed text |
+| **Agent Framework** | **Google Agent Development Kit (ADK)**: `Agent`, `Runner`, `LiveRequestQueue`, session service | Production-grade agent orchestration, native tool-calling, live bidirectional streaming |
+| **Model** | **Gemini Live** (native audio) | Speech understanding + generation in one streaming model; handles Marathi/Hindi/English code-switching and spoken numbers |
+| **Tools** | Python functions in `msrtc_human_ai_agent.py` | `get_top3_upcoming_buses`, `get_route_details`, `get_fare_details`, `get_live_bus_eta`, `get_caller_ticket`, `get_caller_profile` / `update_caller_profile`, `handle_emergency` |
+| **Telephony** | SIP / media-stream bridge (Exotel / Twilio / Asterisk), planned | Bridges PSTN calls from feature phones into the ADK live session over WebSocket |
+| **Prototype front-end** | `ivr_simulator_gui.py` (Tkinter) + `adk_live_voice.py` (headless) | Dial pad, DTMF, live mic, call recording, Firestore IoT call trigger |
+| **Fallback TTS** | Neural TTS (e.g. `en-IN-NeerjaNeural`) | Text-mode / CLI responses |
 
-## 3.4 GPS + POS Integration
+## 3.4 Vehicle Tracking — Existing AIS-140 VLTS (No New Hardware)
 
-| Component | Model | Purpose |
-|---|---|---|
-| GPS Module | u-blox NEO-6M | Satellite positioning |
-| Bluetooth Module | HC-05 | GPS → POS wireless link |
-| Voltage Regulator | LM7805 (12V→5V) | Power from bus battery |
-| Enclosure | Generic ABS box | Weatherproof mounting |
+| Item | Detail |
+|---|---|
+| **Source** | AIS-140 compliant VLTD already fitted on STC buses (MoRTH mandate for public service vehicles), reporting to the STC's VLTS / command-and-control centre |
+| **Data available** | Vehicle reg. no., lat/lng, speed, heading, timestamp, ignition / status, emergency (panic) button events |
+| **Access** | Data-sharing agreement with the STC → REST pull, push webhook or MQTT/stream from the VLTS backend |
+| **BussPass component** | **VLTS Integration Adapter**: authenticates, ingests, de-duplicates, map-matches each vehicle to its route/service (from schedule/duty data), writes to RTDB `buses/{busId}` |
+| **Hardware cost to BussPass** | **₹0.** No GPS modules, Bluetooth links or POS apps to install or maintain |
+| **Prototype** | Deterministic `BusSimulator` produces the identical `LiveBus` model until the live feed is connected (a provider swap only) |
 
 ---
 
@@ -349,17 +367,18 @@ Indian state transport corporations (MSRTC, KSRTC, UPSRTC, APSRTC, etc.) carry *
 
 ### How It Works
 
-1. GPS module on bus captures lat/lng every 10 seconds
-2. POS background app reads GPS data via Bluetooth/Serial
-3. App pushes `{lat, lng, speed, heading, timestamp}` to `buses/{busId}` in RTDB
-4. Flutter app subscribes via `StreamBuilder` → map marker moves in real-time
-5. Cloud Function calculates ETA to next stops using speed + route geometry
+1. The AIS-140 VLTD already installed on the bus reports position to the STC's VLTS backend (no BussPass hardware involved)
+2. The **VLTS Integration Adapter** pulls (or receives a push of) the latest positions from the STC VLTS API
+3. The adapter normalises each record, map-matches the vehicle to its active route/service, and writes `{lat, lng, speed, heading, routeId, nextStopId, lastUpdated}` to `buses/{busId}` in RTDB
+4. The Flutter app subscribes via a Riverpod stream → map marker moves in real time
+5. `EtaEngine` + Cloud Function compute ETA to the next stops from speed + route geometry; the IVR tool `get_live_bus_eta` reads the same node
 
-### Data Consumption
+### Why reuse the existing VLTS?
 
-- 1 update ≈ 200 bytes JSON
-- 6 updates/min × 60 min × 16 hrs = 5,760 updates/day
-- 5,760 × 200 bytes = **~1.15 MB/day per bus** — trivial on any data plan
+- **Already mandated and installed**: no procurement, fitting, wiring or maintenance
+- **Single source of truth**: the same positions the STC control room sees
+- **Instant scale**: every VLTS-equipped bus is trackable as soon as the feed is connected
+- **Safety signal included**: AIS-140 panic-button events can be surfaced to the control room / IVR emergency flow
 
 ---
 
@@ -380,7 +399,7 @@ Algorithm:
 
 2. Run time-dependent Dijkstra:
    - At each node, check which buses are AVAILABLE at that time
-   - Query RTDB for real-time bus positions for actual ETA
+   - Query RTDB (fed by the existing VLTS) for real-time bus positions for actual ETA
    - Factor in buffer time for connections (minimum 10 min)
 
 3. Return top 3 routes ranked by:
@@ -463,46 +482,48 @@ When a journey requires changing buses:
 
 ---
 
-## 4.5 📞 IVR System for Elderly / Feature Phone Users
+## 4.5 📞 AI Human IVR for Elderly / Feature Phone Users (Google ADK)
+
+No menus and no "Press 1". The caller simply talks to an empathetic **AI Enquiry Officer** built with the **Google Agent Development Kit (ADK)** and **Gemini Live**.
 
 ### Call Flow
 
 ```
-📞 User dials toll-free number
+📞 User dials helpline (any phone — keypad, landline, smartphone)
     │
     ▼
-🗣️ Welcome message (auto-detect language or press 1-4)
+☎️ Telephony bridge / simulator → opens ADK live session (LiveRequestQueue)
     │
-    ├── Press 1 → Hindi
-    ├── Press 2 → Marathi
-    ├── Press 3 → English
-    └── Press 4 → Kannada
-         │
-         ▼
-    Main Menu:
-    ├── Press 1 → 🚌 Track my bus (enter bus number via keypad)
-    ├── Press 2 → 📍 Plan journey (speak your destination)
-    │                  │
-    │                  ▼
-    │             🎤 Sarvam STT (listen to destination)
-    │                  │
-    │                  ▼
-    │             🧠 Gemini NLU (parse intent + extract entities)
-    │                  │
-    │                  ▼
-    │             📊 Query route engine (find best routes)
-    │                  │
-    │                  ▼
-    │             🔊 Sarvam TTS (read out journey plan in native language)
+    ▼
+🔎 Caller-ID pre-fetch: get_caller_profile + get_caller_ticket (Firestore)
     │
-    ├── Press 3 → 🎫 My ticket status (auto-lookup by caller ID)
-    └── Press 4 → 🆘 Emergency / Help (connect to agent)
+    ▼
+🗣️ AI Officer greets in Hindi, offers Marathi / English
+   (repeat callers greeted by name in their preferred language)
+    │
+    ▼
+🎤 Caller speaks freely (code-switching OK) → streamed to Gemini Live
+    │
+    ▼
+🧠 ADK agent decides & calls tools:
+    ├── get_top3_upcoming_buses  → next 3 departures, platform, type, fare
+    ├── get_route_details        → via stops, duration
+    ├── get_fare_details         → MSRTC stage fare per bus type
+    ├── get_live_bus_eta         → live position from VLTS-fed RTDB
+    ├── get_caller_ticket        → active ticket by caller ID
+    └── handle_emergency         → 112 / 108 / 1091 / MSRTC control room
+    │
+    ▼
+🔊 Natural spoken reply streamed back (native audio)
+    │
+    ▼
+💾 update_caller_profile (name, language, mood, summary) → hang up
 ```
 
 ### Conductor-Assisted Flow (Feature Phone Boarding)
 
-1. Conductor issues ticket via POS
-2. POS sends ticket data to Firestore with passenger's phone number
+1. Conductor issues a ticket on the STC's existing electronic ticket machine (ETIM) / conductor app
+2. Ticket data (with the passenger's phone number) is synced to Firestore through the STC ticketing integration
 3. Cloud Function creates a "journey record" linked to that phone number
 4. When the elderly person calls the IVR, system looks up their active journey by caller ID
 5. IVR tells them: *"You are on Bus MH12AB1234. Next stop: Lonavala in 45 minutes."*
@@ -514,7 +535,8 @@ When a journey requires changing buses:
 ### Trigger Flow
 
 ```
-Step 1: Conductor taps "HALT STOP" button on POS/dashboard
+Step 1: Conductor taps "HALT STOP" on the conductor dashboard
+        (or halt auto-detected: VLTS shows ignition off / stationary at a known meal-halt stop)
     │
     ▼
 Step 2: Cloud Function fires:
@@ -527,8 +549,8 @@ Step 3: After 15 minutes:
     │
     ▼
 Step 4: After 18 minutes:
-    └── Automated phone call (Exotel) to feature-phone passengers
-        TTS: "Aapki bus 2 minute mein chal rahi hai, kripya wapas aayein"
+    └── Automated outbound call (ADK voice agent via telephony bridge) to feature-phone passengers
+        Voice: "Aapki bus 2 minute mein chal rahi hai, kripya wapas aayein"
     │
     ▼
 Step 5: Conductor sees headcount dashboard:
@@ -592,11 +614,11 @@ Step 5: Conductor sees headcount dashboard:
 
 ```
 🔥 RTDB
-└── buses/{busId}
+└── buses/{busId}            ← written only by the VLTS Integration Adapter
         ├── lat, lng, speed, heading
         ├── routeId, nextStopId, etaNextStop
-        ├── status, lastUpdated
-        └── passengerCount
+        ├── status, lastUpdated, source: "vlts" | "simulator"
+        └── passengerCount           (from STC ticketing data when available)
 ```
 
 ---
@@ -605,52 +627,58 @@ Step 5: Conductor sees headcount dashboard:
 
 | Function | Trigger | Description |
 |---|---|---|
+| `vltsIngest` | Scheduled pull / HTTPS push from STC VLTS | Ingest existing AIS-140 VLTS positions → normalise → map-match → write `buses/{busId}` |
 | `onBusLocationUpdate` | RTDB write on `buses/{busId}` | Calculate ETA to next stops, update journey progress |
 | `planJourney` | HTTPS callable | Takes src/dest/time → returns optimal routes |
 | `detectTransit` | Scheduled (every 30s per active user) | Cross-reference user location with bus locations |
 | `triggerHaltAlert` | HTTPS callable (conductor) | Send push notifications + schedule phone calls |
-| `ivrWebhook` | HTTPS (Exotel callback) | Process IVR inputs, query routes, return TTS response |
-| `ivrSttProcess` | HTTPS | Receive audio → Sarvam STT → Gemini NLU → intent |
+| `ivrMediaStream` | WebSocket (telephony media stream) | Bridge call audio ↔ Google ADK `Runner.run_live` session (Gemini Live) |
+| `ivrTools` | Invoked by ADK agent | Timetable, fare, route, live ETA, ticket, caller CRM, emergency tools |
 | `linkTicketToPhone` | Firestore `tickets/{id}` create | Auto-create journey record for feature phone users |
 | `connectionMonitor` | Pub/Sub (every 60s) | Check connecting bus availability for transit users |
 
 ---
 
-# 7. GPS + POS Integration Detail
+# 7. Existing VLTS Integration Detail
 
-## 7.1 POS Background Service Architecture
+## 7.1 VLTS Integration Adapter Architecture
 
 ```
-┌─────────────────────────────────────────────────┐
-│             POS Device (Android)                │
-│                                                 │
-│  ┌─────────────┐    ┌────────────────────────┐  │
-│  │ Ticket App  │    │  BussPass Background   │  │
-│  │ (Existing   │    │       Service          │  │
-│  │  ticketing) │    │                        │  │
-│  └─────────────┘    │  • Bluetooth connect   │  │
-│                     │    to GPS module        │  │
-│                     │  • Parse NMEA data      │  │
-│                     │  • Push to Firebase     │  │
-│                     │    RTDB every 10 sec    │  │
-│                     │  • Offline queue with   │  │
-│                     │    SQLite fallback      │  │
-│                     └────────────────────────┘  │
-│                             ↕                   │
-│               POS's existing 4G/LTE modem       │
-└─────────────────────────────────────────────────┘
-         ↕ Bluetooth
-┌─────────────────────┐
-│   GPS Module        │
-│   (NEO-6M)          │
-│   Powered by bus    │
-│   12V → 5V          │
-└─────────────────────┘
+┌──────────────────────────┐      ┌──────────────────────────────┐
+│ AIS-140 VLTD on each bus │ ───▶ │ STC VLTS / Command Centre    │
+│ (already installed)      │ GSM  │ (existing, operated by STC)  │
+└──────────────────────────┘      └──────────────┬───────────────┘
+                                                 │ API / webhook / MQTT
+                                                 │ (data-sharing agreement)
+                                                 ▼
+                         ┌──────────────────────────────────────────┐
+                         │   BussPass VLTS Integration Adapter      │
+                         │   (Cloud Functions / Cloud Run)          │
+                         │  • Auth + rate-limited pull / push recv  │
+                         │  • De-dupe, drop stale / invalid fixes   │
+                         │  • Map vehicle → route/service (duty)    │
+                         │  • Snap to route polyline, next stop     │
+                         │  • Write buses/{busId} to RTDB           │
+                         └───────────────┬──────────────────────────┘
+                                         ▼
+             ┌──────────────┬────────────┴────────────┬──────────────┐
+             ▼              ▼                         ▼              ▼
+        Flutter app   Transit detection        ADK IVR tool     Halt / delay
+        live map      (rider ↔ bus match)     get_live_bus_eta     alerts
 ```
+
+## 7.2 Provider Abstraction
+
+The app consumes a single `LiveBus` model. Two interchangeable providers produce it:
+
+| Provider | When used |
+|---|---|
+| `VltsLiveBusProvider` | Production: STC VLTS feed via RTDB |
+| `BusSimulator` (deterministic) | Prototype / demo / fallback if the feed is unavailable |
 
 <div class="highlight-box">
 
-**💡 Key Advantage:** The per-bus data consumption is only **~1.15 MB/day** — trivial on the POS device's existing data plan. The hardware components are widely available, low-power, and easy to install.
+**💡 Key Advantage:** Because the tracking hardware already exists on every bus by regulation, BussPass needs **zero hardware procurement or installation**. Rollout to a new depot or state is a **data-integration task, not a fitting task**.
 
 </div>
 
@@ -661,11 +689,11 @@ Step 5: Conductor sees headcount dashboard:
 | Layer | Measure |
 |---|---|
 | **Firebase Auth** | Phone OTP authentication for all users |
-| **RTDB Rules** | POS devices = write (service accounts); Users = read-only |
+| **RTDB Rules** | Only the VLTS Integration Adapter (service account) can write; users read-only |
 | **Firestore Rules** | Users read own journeys only; Conductors write own bus data |
 | **API Security** | Cloud Functions behind Firebase App Check (device attestation) |
-| **POS Auth** | Each POS gets unique service account key, rotated quarterly |
-| **IVR** | Caller ID verification + OTP for sensitive operations |
+| **VLTS Feed Auth** | STC-issued API credentials stored in Secret Manager, IP allow-listed, rotated per agreement |
+| **IVR** | Caller ID verification; ADK tools scoped to read-only data except caller profile; Gemini API key in Secret Manager / env (never in source) |
 | **Data Privacy** | Location data auto-deleted after 24h; anonymized for analytics |
 | **Compliance** | DPDP Act 2023 compliant — no permanent location storage |
 
@@ -684,11 +712,11 @@ Step 5: Conductor sees headcount dashboard:
 | # | Feature | Priority | Est. Hours | Owner |
 |---|---|---|---|---|
 | 1 | Flutter app with Google Maps + live bus markers from RTDB | P0 | 6h | Dev 1 |
-| 2 | Simulated GPS data feed (script pushing fake bus locations) | P0 | 2h | Dev 2 |
+| 2 | VLTS adapter interface + deterministic simulator standing in for the live VLTS feed | P0 | 2h | Dev 2 |
 | 3 | Multi-bus journey planner with 2-3 demo routes | P0 | 6h | Dev 2 |
 | 4 | Smart transit detection (match user location to bus) | P0 | 4h | Dev 3 |
 | 5 | Night halt alert (push notification + phone call demo) | P0 | 3h | Dev 3 |
-| 6 | IVR demo with Exotel (DTMF menu + STT in Hindi/Marathi) | P0 | 5h | Dev 4 |
+| 6 | AI Human IVR demo with Google ADK + Gemini Live (Hindi/Marathi/English) | P0 | 5h | Dev 4 |
 | 7 | Conductor dashboard (web) with headcount | P0 | 4h | Dev 5 |
 | 8 | Connection bus management UI | P1 | 3h | Dev 5 |
 | 9 | Beautiful UI/UX with animations + pitch deck | P0 | 3h | Dev 6 |
@@ -699,9 +727,9 @@ Step 5: Conductor sees headcount dashboard:
 
 | Feature | Notes |
 |---|---|
-| Physical GPS hardware demo | If GPS module available — very impressive to judges |
+| Live VLTS sample feed | If STC shares a sandbox / sample VLTS endpoint, show real buses |
 | Offline mode with Hive caching | For low-connectivity demo scenario |
-| Multi-language IVR (4 languages) | Start with Hindi + English minimum |
+| Kannada in IVR | Hindi + Marathi + English already supported |
 | Analytics dashboard | Show bus utilization, delay patterns |
 
 ---
@@ -742,11 +770,14 @@ busspass/
 │       ├── eta.ts
 │       ├── journey-planner.ts
 │       ├── halt-alerts.ts
-│       ├── ivr-webhook.ts
+│       ├── vlts-ingest.ts       # Existing AIS-140 VLTS feed adapter
 │       ├── transit-detection.ts
 │       └── connection-monitor.ts
+├── ivr/                          # Google ADK AI Human IVR (Python)
+│   ├── msrtc_human_ai_agent.py  # Tools, persona, CRM, emergency
+│   ├── ivr_simulator_gui.py     # Desktop call simulator
+│   └── adk_live_voice.py        # Headless live voice agent
 ├── scripts/
-│   ├── simulate_gps.py          # Simulate bus GPS for demo
 │   └── seed_routes.py           # Seed Firestore with demo data
 └── pubspec.yaml
 ```
@@ -765,16 +796,16 @@ busspass/
 
 ## Phase 2: Core Features (Week 2)
 - [ ] Build real-time map with live bus markers (RTDB → Google Maps)
-- [ ] Build GPS simulator script (Python — moves bus along route polyline)
+- [ ] Define VLTS adapter contract + deterministic simulator provider (moves bus along route polyline)
 - [ ] Implement journey planner algorithm (graph-based Dijkstra)
 - [ ] Build journey planner UI (source/dest input → route option cards)
 - [ ] Implement smart transit detection background service
 - [ ] Build in-transit journey view (progress bar, ETA, next stop alert)
 
 ## Phase 3: IVR + Conductor (Week 3)
-- [ ] Set up Exotel account + configure IVR flow (DTMF menus)
-- [ ] Integrate Sarvam AI STT/TTS for Hindi + English
-- [ ] Build IVR webhook Cloud Functions
+- [ ] Build Google ADK agent (persona + tools) on Gemini Live
+- [ ] Implement IVR tools (timetable, fare, route, live ETA, ticket, CRM, emergency)
+- [ ] Build desktop IVR simulator + telephony media-stream bridge design
 - [ ] Build conductor dashboard (Flutter Web)
 - [ ] Implement night halt alert system (push + phone call)
 - [ ] Implement connection bus monitoring logic
@@ -783,7 +814,7 @@ busspass/
 - [ ] End-to-end integration testing (all features working together)
 - [ ] UI polish — animations, transitions, error handling, edge cases
 - [ ] Build and rehearse demo script (8-minute time limit)
-- [ ] Prepare hardware demo (if GPS module procured)
+- [ ] Request VLTS sample feed / API documentation from STC
 - [ ] Create pitch deck (PPT/Google Slides)
 - [ ] Prepare and rehearse judge Q&A answers
 
@@ -793,12 +824,12 @@ busspass/
 
 | Metric | Prototype (SIH) | Production (Post-SIH) |
 |---|---|---|
-| Buses tracked | 10 (simulated) | 50,000+ |
+| Buses tracked | 220 (simulated) | Entire VLTS-equipped STC fleet (50,000+) |
 | Concurrent users | 100 | 10M+ |
 | RTDB architecture | Single instance | Sharded by state/region |
 | Journey planner | In-memory graph | Redis-cached + pre-computed |
-| IVR capacity | Exotel sandbox | Multi-region redundant |
-| GPS update interval | 10 sec (fixed) | Adaptive (5s city, 30s highway) |
+| IVR capacity | ADK desktop simulator | Autoscaled ADK workers behind SIP bridge, multi-region |
+| Position update interval | Simulator 3 s tick | As provided by STC VLTS (AIS-140 reporting interval) |
 | Data retention | 24 hours | 90 days (cold storage) |
 
 ---
@@ -813,21 +844,21 @@ busspass/
 
 ## Technical Feasibility
 
-**Q: How does GPS work if the POS device doesn't have GPS capabilities?**
+**Q: Where does your live bus location come from? Do you install hardware?**
 
-> The GPS module is an external hardware unit (NEO-6M) connected to the POS via Bluetooth. It uses the bus's 12V power supply. The POS only acts as a data relay using its existing internet connection. No GPS capability is needed on the POS itself.
+> No new hardware. State transport buses already carry **AIS-140 compliant vehicle tracking devices** under the MoRTH mandate, and these report to the STC's VLTS / command centre. BussPass connects to that existing feed through a **VLTS Integration Adapter** and adds journey planning, ETAs, transit detection, alerts and the voice IVR on top.
 
-**Q: What if the POS loses internet connectivity?**
+**Q: What if the VLTS feed is delayed or a bus stops reporting?**
 
-> The POS background app queues location updates locally using SQLite. When connectivity resumes, it batch-uploads all queued updates. Firebase RTDB handles offline sync natively. The app shows "Last updated X minutes ago" to users.
+> The adapter marks stale positions. The app shows "Last updated X minutes ago" and falls back to the **timetable-based ETA model** (`EtaEngine`) for that bus. The deterministic simulator uses the same `LiveBus` model, so the UI never breaks.
 
 **Q: How do you handle the latency of real-time tracking?**
 
-> GPS update every 10s → POS pushes to RTDB (~200ms) → Firebase propagates to clients (~100ms). Total end-to-end latency: **under 2 seconds**. For a bus at 60 km/h, 2s lag = 33 meters — well within acceptable UX.
+> VLTD → STC VLTS (device reporting interval) → adapter ingest → RTDB (~200 ms) → clients (~100 ms). Our added latency is **well under 2 seconds** on top of the device's own reporting interval.
 
 **Q: Can your system work in areas with poor connectivity (ghats, rural)?**
 
-> Three layers of resilience: (1) POS queues data offline and syncs when connected, (2) Flutter app caches last known positions via Hive, (3) IVR is PSTN-based — works even with 2G signal where data fails.
+> Three layers of resilience: (1) the VLTD buffers and the STC backend handles device-side gaps, (2) the Flutter app plans journeys **fully offline** from a bundled network graph and caches last known positions, (3) the AI IVR is reached by an ordinary phone call, so it works even on 2G where mobile data fails.
 
 ## Innovation & Novelty
 
@@ -835,15 +866,15 @@ busspass/
 
 > Aapli ST is GPS tracking only. BussPass adds: (1) Multi-bus journey planning with real-time connections, (2) IVR for 300M+ feature phone users, (3) Smart transit detection, (4) Night halt alerts, (5) Conductor headcount tools. We solve the **accessibility gap** that no existing solution addresses.
 
-**Q: Why not just use the driver's phone for GPS?**
+**Q: Why not just use the driver's phone or your own GPS device?**
 
-> Drivers change shifts, forget to keep apps running, or phones die. Our GPS module is **hardwired to the bus battery** and paired with the conductor's POS (always on during duty). This gives **100% uptime** without human dependency.
+> Drivers change shifts and phones die, and fitting our own devices would duplicate what is already mandated. The AIS-140 VLTD is **hardwired, tamper-monitored and already installed**, so reusing it gives reliable uptime with **zero hardware cost** and no human dependency.
 
 ## Scalability
 
 **Q: Can this scale to all of India's 1.5 lakh state transport buses?**
 
-> Firebase RTDB can be sharded by state/region. Each shard handles ~20,000 buses easily. Cloud Functions auto-scale horizontally. The GPS hardware is simple, mass-producible, and uses existing POS connectivity — so deployment scales linearly without new infrastructure.
+> Firebase RTDB can be sharded by state/region. Each shard handles ~20,000 buses easily. Cloud Functions and ADK IVR workers auto-scale horizontally. Since tracking reuses the existing VLTS, scaling to a new state is a **data-integration task with no hardware rollout**.
 
 **Q: What about data privacy concerns?**
 
@@ -853,11 +884,11 @@ busspass/
 
 **Q: How does the IVR help elderly users who can't read?**
 
-> The IVR speaks in their native language. Example: An elderly Marathi speaker calls, presses 2 for Marathi, says "मला पुण्याहून मुंबईला जायचं आहे". Sarvam AI transcribes → Gemini understands → system finds routes → TTS reads out the journey plan in Marathi. The experience is **conversational**, not menu-driven.
+> The IVR is an **AI Human Enquiry Officer** built on **Google ADK + Gemini Live**. An elderly Marathi speaker just calls and says "मला पुण्याहून मुंबईला जायचं आहे". No keypresses are needed. The agent understands the speech directly, calls our timetable tool, and replies in natural Marathi with the next 3 buses, platform, bus type and fare. It's **conversational**, not menu-driven.
 
 **Q: What if the elderly person doesn't know the bus number?**
 
-> The conductor links the passenger's phone number to the ticket during boarding. After that, the IVR automatically identifies their active journey by caller ID. They call and hear: "You are on Bus 1234. Next stop: Lonavala in 45 minutes."
+> The passenger's phone number is captured with the ticket at boarding (STC ticketing integration). After that, the IVR automatically identifies their active journey by caller ID. They call and hear: "You are on Bus 1234. Next stop: Lonavala in 45 minutes."
 
 **Q: How do you handle the night halt problem?**
 
@@ -867,7 +898,7 @@ busspass/
 
 **Q: How would this be deployed in practice?**
 
-> Primary model is **B2G (Business-to-Government)** — state transport corporations adopt the platform. GPS hardware is installed during routine bus maintenance. The POS background app is pushed as an OTA update. The passenger app is published on Play Store / App Store. IVR number is advertised at bus stands and on tickets.
+> Primary model is **B2G (Business-to-Government)** — state transport corporations adopt the platform. Live tracking is enabled by connecting to the STC's **existing VLTS feed** under a data-sharing agreement. No hardware is installed. The passenger app is published on Play Store / App Store. IVR number is advertised at bus stands and on tickets.
 
 ---
 
@@ -882,8 +913,8 @@ busspass/
 | | 3. Board bus | Transit detection → "You're on Bus MH12-AB-1234" |
 | | 4. Connection alert | "Connecting bus at Lonavala departs in 20 min" |
 | | 5. Halt stop | Conductor triggers halt → push notification appears |
-| | 6. IVR demo | Call number live → navigate in Hindi → get journey info |
-| **5:00 - 7:00** | **Architecture** | System diagram, GPS+POS innovation, IVR flow |
+| | 6. AI Human IVR demo | Live call → speak naturally in Hindi/Marathi → ADK agent answers with next 3 buses |
+| **5:00 - 7:00** | **Architecture** | System diagram, existing-VLTS integration (zero hardware), Google ADK IVR flow |
 | **7:00 - 8:00** | **Impact & Scale** | National scalability, social inclusion, deployment strategy |
 
 ---
@@ -898,8 +929,8 @@ flutter test integration_test/journey_flow.dart # E2E integration
 ```
 
 ## Manual Verification
-- Live demo with simulated GPS data on physical device
-- IVR call test with Exotel sandbox number
+- Live demo with the simulator provider (and VLTS sample feed, if available) on a physical device
+- AI IVR test calls via the ADK desktop simulator (Hindi, Marathi, English, emergency scenarios)
 - Multi-device test (passenger app + conductor dashboard simultaneously)
 - Offline mode test (airplane mode → reconnect → data sync)
 - Night halt alert end-to-end flow (push + phone call)

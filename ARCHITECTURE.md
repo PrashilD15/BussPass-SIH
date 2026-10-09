@@ -63,3 +63,28 @@ Calculating complex routes with transfers (A* or Dijkstra's) is heavy. We use a 
 - Uses `google_maps_flutter`.
 - Nearest bus stops are loaded natively into the map.
 - Uses custom drawn `BitmapDescriptor` canvases (Premium Slate circles with bus icons) to highlight bus stands dynamically without needing external image assets.
+
+## 5. Live Bus Tracking — Phase 1 Prototype vs Production
+> **Decision (v2.0):** We do **not** build or install custom tracking hardware (our own NEO-6M GPS module + Bluetooth relay). This has been **dropped**.
+
+### Production (Planned)
+- State transport buses already carry **AIS-140 compliant Vehicle Location Tracking Devices (VLTDs)**.
+- MSRTC plans to provide access to this existing feed.
+- BussPass will consume this feed through a **VLTS Integration Adapter** (Cloud Functions / Cloud Run) which will write to Firebase RTDB `buses/{busId}`.
+
+### Current Prototype (MVP Phase)
+- Until the live VLTS data is available, BussPass simulates live tracking using **Scheduled Data Interpolation**.
+- The `BusSimulator` reads the official **Timetables** and **Trip Master (Excel/trip_routes)** to calculate where a bus *should* be at the current time.
+- It interpolates the bus's position along the route polyline based on average speed and elapsed time since departure.
+- This deterministic simulation is pushed to Firebase RTDB `buses/{busId}` so the Flutter App and AI IVR agent can test "live" tracking logic without code changes when transitioning to the real VLTS feed.
+- **Provider abstraction:** The app consumes one `LiveBus` model. Switching from the `BusSimulator` to the actual `VLTS provider` will be seamless.
+
+## 6. AI Human Voice IVR — Google ADK
+- Built with the **Google Agent Development Kit (ADK)**: `Agent` (persona + tools), `Runner.run_live(...)` with a `LiveRequestQueue`, `InMemorySessionService` (prototype).
+- Model: **Gemini Live** (native streaming audio in/out). No separate STT/TTS pipeline and no DTMF menus.
+- Tools (`msrtc_human_ai_agent.py`): `get_top3_upcoming_buses`, `get_route_details`, `get_fare_details`, `get_live_bus_eta`, `get_caller_ticket`, `get_caller_profile`, `update_caller_profile`, `handle_emergency`.
+- Firestore collections used: `routes`, `timetables` / trip master, `tickets`, `caller_profiles`, `ivr_gateway/current_call` (IoT/hardware call trigger).
+- Front-ends: `ivr_simulator_gui.py` (desktop dial pad, live mic, recordings) and `adk_live_voice.py` (headless). Production uses a SIP/media-stream bridge (Exotel / Twilio / Asterisk) into the ADK live session.
+- Secrets: `GEMINI_API_KEY` must come from the environment / Secret Manager. Never hardcode it.
+- Full details: `AI_HUMAN_IVR_ARCHITECTURE.md`.
+
