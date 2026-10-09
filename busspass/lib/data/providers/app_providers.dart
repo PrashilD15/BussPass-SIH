@@ -101,7 +101,7 @@ final networkRepositoryProvider = Provider<NetworkRepository>((ref) {
 /// reloads the whole chain.
 final networkSnapshotProvider = FutureProvider<NetworkSnapshot>((ref) async {
   final stc = ref.watch(effectiveSTCProvider);
-  final snapshot = await ref.watch(networkRepositoryProvider).load(assetPath: stc.networkAsset);
+  final snapshot = await ref.watch(networkRepositoryProvider).load(assetPath: stc.networkAsset, stcCode: stc.stcCode);
   // The offset caches key on service ids, which are only unique within one
   // dataset version.
   JourneyPlanner.invalidateCaches();

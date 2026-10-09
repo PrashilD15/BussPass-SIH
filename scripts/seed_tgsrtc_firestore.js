@@ -30,6 +30,7 @@ async function seedTGSRTC() {
   // Seed Stops
   console.log(`Seeding ${data.stops.length} stops...`);
   for (const stop of data.stops) {
+    stop.stc = 'TGSRTC';
     const docRef = db.collection('bus_stops').doc(stop.id);
     batch.set(docRef, stop);
     console.log(`  -> ${stop.name}`);
@@ -38,6 +39,7 @@ async function seedTGSRTC() {
   // Seed Routes
   console.log(`Seeding ${data.routes.length} routes...`);
   for (const route of data.routes) {
+    route.stc = 'TGSRTC';
     const docRef = db.collection('routes').doc(route.id);
     batch.set(docRef, route);
     console.log(`  -> ${route.name}`);

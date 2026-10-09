@@ -171,6 +171,7 @@ function buildBusStops() {
     depot: s.depot,
     lat: s.lat,
     lng: s.lng,
+    stc: 'MSRTC',
   }));
 }
 
@@ -202,6 +203,8 @@ function buildRoutes() {
       destination_city: dest.city,
       distance_km: km,
       duration_hrs: durationHrs(km),
+      stc: 'MSRTC',
+      operator: 'MSRTC',
       fare_min: fareMin,
       fare_max: fareMax,
       bus_types: busTypes,

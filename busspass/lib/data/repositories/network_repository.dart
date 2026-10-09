@@ -111,7 +111,7 @@ class NetworkRepository {
   }
 
   /// Load the network, overlaying Firestore when available.
-  Future<NetworkSnapshot> load({required String assetPath, bool allowOverlay = true}) async {
+  Future<NetworkSnapshot> load({required String assetPath, required String stcCode, bool allowOverlay = true}) async {
     final bundled = await loadBundled(assetPath: assetPath);
 
     if (!allowOverlay || _firestore == null) {
@@ -141,7 +141,7 @@ class NetworkRepository {
     }
 
     try {
-      final overlay = await _fetchOverlay().timeout(overlayTimeout);
+      final overlay = await _fetchOverlay(stcCode).timeout(overlayTimeout);
       if (overlay.stops.isEmpty && overlay.routes.isEmpty) {
         // Firestore reachable but unseeded — bundled data stands.
         return NetworkSnapshot(
@@ -196,11 +196,11 @@ class NetworkRepository {
   ///
   /// Reads the same schema the existing `scripts/seed_firestore.js` writes, so
   /// an already-seeded project works with no migration.
-  Future<_Overlay> _fetchOverlay() async {
+  Future<_Overlay> _fetchOverlay(String stcCode) async {
     final db = _firestore!;
     final results = await Future.wait([
-      db.collection('bus_stops').get(),
-      db.collection('routes').get(),
+      db.collection('bus_stops').where('stc', isEqualTo: stcCode).get(),
+      db.collection('routes').where('stc', isEqualTo: stcCode).get(),
     ]);
 
     final stops = <NetworkStop>[];
