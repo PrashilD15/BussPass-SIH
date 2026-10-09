@@ -95,18 +95,18 @@ class NetworkRepository {
   /// window the Firestore read is skipped entirely — instant launch, no cost.
   static const Duration overlayCacheTtl = Duration(hours: 12);
 
-  TransitNetwork? _bundledCache;
+  final Map<String, TransitNetwork> _bundledCache = {};
 
   /// Parse the bundled dataset. Cached, since it is immutable reference data.
   Future<TransitNetwork> loadBundled({required String assetPath}) async {
-    final cached = _bundledCache;
+    final cached = _bundledCache[assetPath];
     if (cached != null) return cached;
 
     final bundle = _bundle ?? rootBundle;
     final raw = await bundle.loadString(assetPath);
     final json = jsonDecode(raw) as Map<String, dynamic>;
     final network = TransitNetwork.fromJson(json);
-    _bundledCache = network;
+    _bundledCache[assetPath] = network;
     return network;
   }
 
